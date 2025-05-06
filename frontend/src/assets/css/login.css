@@ -1,0 +1,76 @@
+/* Login Component Styles */
+.login-section {
+  padding: var(--space-xxl) 0;
+  background-color: var(--light-bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.login-section p {
+  text-align: center;
+  margin-top: var(--space-md);
+}
+
+.login-section .container {
+  max-width: 400px;
+  background-color: var(--white);
+  padding: var(--space-xl);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-top: 80px;
+}
+
+.login-section h2 {
+  text-align: center;
+  margin-bottom: var(--space-lg);
+  color: var(--primary-color);
+}
+
+.login-section .form-group {
+  margin-bottom: var(--space-lg);
+}
+
+.login-section .form-group label {
+  display: block;
+  margin-bottom: var(--space-sm);
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+.login-section .form-group input {
+  width: 100%;
+  padding: var (--space-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-md);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color var(--transition-fast);
+}
+
+.login-section .form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.login-section .btn-primary {
+  width: 100%;
+  padding: var(--space-md);
+  font-size: 1rem;
+}
+
+/* Responsive Styles for Login Component */
+@media screen and (max-width: 768px) {
+  .login-section .container {
+    padding: var(--space-lg);
+  }
+
+  .login-section h2 {
+    font-size: 1.8rem;
+  }
+
+  .login-section .btn-primary {
+    font-size: 0.9rem;
+  }
+}
