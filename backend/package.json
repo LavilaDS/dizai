@@ -8,5 +8,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "bcrypt": "^5.0.0",
+    "dotenv": "^16.0.0",
+    "express": "^5.1.0",
+    "pg": "^8.15.6"
+  }
 }
