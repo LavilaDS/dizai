@@ -21,7 +21,7 @@ class Home {
             </div>
           </div>
           <div class="hero-image">
-            <img src="../src/assets/img/hero-image.svg" alt="DizAí Dashboard Preview">
+            <img src="./src/assets/img/hero-image.svg" alt="DizAí Dashboard Preview">
           </div>
         </div>
       </section>
@@ -36,21 +36,21 @@ class Home {
           <div class="benefits-cards">
             <div class="benefit-card">
               <div class="benefit-icon">
-                <img src="../src/assets/img/dashboard-icon.svg" alt="Dashboard Intuitivo">
+                <img src="./src/assets/img/dashboard-icon.svg" alt="Dashboard Intuitivo">
               </div>
               <h3>Dashboard Intuitivo</h3>
               <p>Visualize todos os dados coletados de forma clara e objetiva, facilitando a interpretação e tomada de decisões.</p>
             </div>
             <div class="benefit-card">
               <div class="benefit-icon">
-                <img src="../src/assets/img/analysis-icon.svg" alt="Análises Detalhadas">
+                <img src="./src/assets/img/analysis-icon.svg" alt="Análises Detalhadas">
               </div>
               <h3>Análises Detalhadas</h3>
               <p>Explore os dados em profundidade com relatórios customizáveis e gráficos interativos que revelam padrões importantes.</p>
             </div>
             <div class="benefit-card">
               <div class="benefit-icon">
-                <img src="../src/assets/img/engagement-icon.svg" alt="Engajamento Simplificado">
+                <img src="./src/assets/img/engagement-icon.svg" alt="Engajamento Simplificado">
               </div>
               <h3>Engajamento Simplificado</h3>
               <p>Aumente a participação com formulários intuitivos e processos otimizados que economizam tempo dos participantes.</p>
