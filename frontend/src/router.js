@@ -18,6 +18,7 @@ class Router {
     }
   
     async handleRoute() {
+      window.scrollTo(0, 0);
       const path = window.location.pathname;
       const route = this.routes[path] || this.routes['/'];
   
@@ -31,7 +32,6 @@ class Router {
     }
   
     navigate(url) {
-      window.scrollTo(0, 0);
       window.history.pushState({}, '', url);
       this.handleRoute();
     }
