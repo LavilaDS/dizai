@@ -10,6 +10,7 @@ const env = {
     database: process.env.DB_NAME,
   },
   jwtSecret: process.env.JWT_SECRET,
+  jwtExpiresIn: process.env.JWT_EXPIRATION,
 };
 
 module.exports = env;
