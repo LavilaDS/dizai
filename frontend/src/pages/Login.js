@@ -1,7 +1,10 @@
-// Updated Login component with dynamic feedback and link to Signup page
+import { showNotification } from '../utils/notification.js';
+import { login as loginApi } from '../api/authApi.js';
+
 class Login {
   constructor() {
     this.element = document.querySelector("main");
+    this.load = false;
   }
 
   async render() {
@@ -27,24 +30,32 @@ class Login {
     `;
 
     this.addEventListeners();
-    this.initializeAnimations();
+    if (!this.load) {
+      this.load = true;
+      this.initializeAnimations();
+    }
   }
 
   addEventListeners() {
     const form = document.getElementById("login-form");
     const feedback = document.getElementById("login-feedback");
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const email = document.getElementById("login-email").value;
+      feedback.style.display = "none";
+      const email = document.getElementById("login-email").value.trim();
       const password = document.getElementById("login-password").value;
-
-      // Simulate login validation
-      if (email === "user@example.com" && password === "password123") {
-        alert("Login bem-sucedido!");
-        feedback.style.display = "none";
-      } else {
-        feedback.style.display = "block";
+      try {
+        const { ok, data } = await loginApi({ email, password });
+        if (ok) {
+          showNotification("Login realizado com sucesso!", "success");
+          window.history.pushState({}, '', '/dashboard');
+          window.dispatchEvent(new Event('popstate'));
+        } else {
+          showNotification(data.error, "error");
+        }
+      } catch (err) {
+        showNotification("Erro ao conectar com o servidor. Tente novamente.", "error");
       }
     });
   }
