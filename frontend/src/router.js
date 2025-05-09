@@ -1,9 +1,13 @@
-// Router for SPA navigation
+import LayoutManager from "./components/LayoutManager.js";
+
 class Router {
     constructor(routes) {
       this.routes = routes;
       this.currentComponent = null;
-      
+      this.layoutManager = new LayoutManager();
+      this.layoutManager.initialize();
+    
+
       window.addEventListener('popstate', () => this.handleRoute());
       this.handleRoute();
       
@@ -25,9 +29,10 @@ class Router {
       if (this.currentComponent && this.currentComponent.unmount) {
         this.currentComponent.unmount();
       }
-  
+      this.layoutManager.updateLayout();
       const component = new route();
       await component.render();
+
       this.currentComponent = component;
     }
   
@@ -38,3 +43,7 @@ class Router {
 }
   
 export default Router;
+export const navigateTo = (url) => {
+  window.history.pushState({}, '', url);
+  window.dispatchEvent(new Event('popstate'));
+};
