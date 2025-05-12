@@ -6,8 +6,8 @@ export default class QuestionnairesSection {
     this.questionnaires = [];
     this.loading = false;
     this.error = null;
-    this.isCreatingCampaign = false;
     this.selectedQuestionnaire = null;
+    this.selectedQuestionnaireData = null;
     this.modalElement = null;
     
     // Tipos de perguntas padronizados
@@ -33,108 +33,6 @@ export default class QuestionnairesSection {
       "#2ADBBD", // Verde água
       "#FF5C7F"  // Rosa mais claro
     ];
-    
-    this.defaultQuestionnaires = [
-      {
-        id: 1,
-        titulo: "Avaliação de Desempenho Anual",
-        descricao: "Questionário completo para avaliação de desempenho anual dos colaboradores, incluindo metas, competências e plano de desenvolvimento.",
-        date: "14/01/2023",
-        tags: [{ nome: "Desempenho" }, { nome: "RH" }, { nome: "Anual" }],
-        color: "#4649FF",
-        questions: [
-          { 
-            enunciado: "Como você avalia seu desempenho geral no último ano?", 
-            tipo_pergunta: "LIKERT_SCALE", 
-            opcoes: ["Muito Abaixo do Esperado", "Abaixo do Esperado", "Atende às Expectativas", "Acima do Esperado", "Excepcional"] 
-          },
-          { 
-            enunciado: "Quais foram suas principais conquistas?", 
-            tipo_pergunta: "FREE_TEXT", 
-            opcoes: [] 
-          },
-          { 
-            enunciado: "Você se sente engajado com os objetivos da empresa?", 
-            tipo_pergunta: "BINARY", 
-            opcoes: ["Sim", "Não"] 
-          },
-          {
-            enunciado: "Quais áreas você deseja desenvolver no próximo ano?",
-            tipo_pergunta: "MULTIPLE_CHOICE_MULTIPLE",
-            opcoes: ["Habilidades Técnicas", "Gestão de Equipe", "Comunicação", "Liderança", "Conhecimento do Negócio"]
-          },
-          {
-            enunciado: "Qual fator mais contribuiu para seu desempenho?",
-            tipo_pergunta: "MULTIPLE_CHOICE_SINGLE",
-            opcoes: ["Treinamentos", "Mentoria", "Ambiente de trabalho", "Ferramentas adequadas", "Equipe de apoio"]
-          }
-        ]
-      },
-      {
-        id: 2,
-        titulo: "Clima Organizacional",
-        descricao: "Pesquisa para avaliar o clima organizacional da empresa, incluindo satisfação, engajamento e cultura.",
-        date: "09/02/2023",
-        tags: [{ nome: "Clima" }, { nome: "Cultura" }, { nome: "Engajamento" }],
-        color: "#8A4FFF",
-        questions: [
-          { 
-            enunciado: "Em uma escala de 0 a 10, o quanto você recomendaria esta empresa como um bom lugar para trabalhar?", 
-            tipo_pergunta: "NUMERIC_SCALE", 
-            opcoes: ["0","1","2","3","4","5","6","7","8","9","10"],
-            min: 0,
-            max: 10
-          },
-          { 
-            enunciado: "Você tem alguma sugestão para melhorar o clima organizacional?", 
-            tipo_pergunta: "FREE_TEXT", 
-            opcoes: [] 
-          },
-          {
-            enunciado: "O que você mais valoriza na cultura da empresa?",
-            tipo_pergunta: "MULTIPLE_CHOICE_SINGLE",
-            opcoes: ["Flexibilidade", "Transparência", "Oportunidades de crescimento", "Ambiente colaborativo", "Reconhecimento"]
-          },
-          {
-            enunciado: "Assinale os valores da empresa com os quais você mais se identifica:",
-            tipo_pergunta: "MULTIPLE_CHOICE_MULTIPLE",
-            opcoes: ["Inovação", "Integridade", "Colaboração", "Excelência", "Diversidade"]
-          }
-        ]
-      },
-      {
-        id: 3,
-        titulo: "Feedback de Produto",
-        descricao: "Colete opiniões sobre a usabilidade e funcionalidades dos produtos da empresa.",
-        date: "22/03/2023",
-        tags: [{ nome: "Produto" }, { nome: "Feedback" }, { nome: "UX" }],
-        color: "#FF6B4A",
-        questions: [
-          { 
-            enunciado: "Qual sua satisfação geral com o produto?", 
-            tipo_pergunta: "LIKERT_SCALE", 
-            opcoes: ["Muito Insatisfeito", "Insatisfeito", "Neutro", "Satisfeito", "Muito Satisfeito"] 
-          },
-          {
-            enunciado: "Quais funcionalidades você mais utiliza? (Selecione todas aplicáveis)",
-            tipo_pergunta: "MULTIPLE_CHOICE_MULTIPLE",
-            opcoes: ["Dashboard", "Relatórios", "Configurações", "Usuários", "Integração com outros sistemas"]
-          },
-          {
-            enunciado: "Em uma escala de 0 a 10, qual a probabilidade de você recomendar nosso produto?",
-            tipo_pergunta: "NUMERIC_SCALE",
-            opcoes: ["0","1","2","3","4","5","6","7","8","9","10"],
-            min: 0,
-            max: 10
-          },
-          {
-            enunciado: "O produto atende suas expectativas?",
-            tipo_pergunta: "BINARY",
-            opcoes: ["Sim", "Não"]
-          }
-        ]
-      }
-    ]
   }
 
   // Gera uma cor aleatória da paleta
@@ -143,34 +41,38 @@ export default class QuestionnairesSection {
   }
 
   async render() {
+    // Criar o elemento principal
     this.element = document.createElement("section");
     this.element.id = "questionnaires-section";
     this.element.className = "dashboard-section active";
   
-    // Se estiver criando uma campanha, renderize o formulário
-    if (this.isCreatingCampaign) {
-      this._renderCampaignForm();
-      return this.element;
-    }
-  
+    // Estrutura HTML básica com mensagem de carregamento inicial
     this.element.innerHTML = `
       <div class="container">
         <header class="content-header">
           <h2 class="content-title">Biblioteca de Questionários</h2>
           <p class="page-description">Selecione um questionário para visualizar suas perguntas e opções de resposta.</p>
         </header>
-        <div class="questionnaire-list" id="questionnaireList"></div>
+        <div class="questionnaire-list" id="questionnaireList">
+          <div class="loading-template">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Carregando questionários, por favor aguarde...</p>
+          </div>
+        </div>
       </div>
     `;
   
-    // Cria o modal se ele não existir no DOM
+    // Criar o modal (se ainda não existir)
     this._createModalIfNeeded();
   
+    // Iniciar carregamento dos questionários
+    this.loading = true;
+  
     try {
-      this.loading = true;
       await this._fetchQuestionnaires();
     } catch (error) {
       this.error = error.message || "Erro ao carregar questionários";
+      console.error("Erro ao carregar questionários:", error);
     } finally {
       this.loading = false;
       this._renderContent();
@@ -179,7 +81,21 @@ export default class QuestionnairesSection {
     return this.element;
   }
 
-  // Criação do modal no DOM se ele não existir
+  _renderContent() {
+    const questionnaireList = this.element.querySelector("#questionnaireList");
+    
+    if (this.loading) {
+      questionnaireList.innerHTML = this._getLoadingTemplate();
+    } else if (this.error) {
+      questionnaireList.innerHTML = this._getErrorTemplate();
+    } else {
+      questionnaireList.innerHTML = this._renderList();
+    }
+
+    this._addEventListeners();
+  }
+
+  // Criação do modal se ele não existir no DOM
   _createModalIfNeeded() {
     if (!document.getElementById("questionnaireModal")) {
       const modalOverlay = document.createElement("div");
@@ -214,151 +130,68 @@ export default class QuestionnairesSection {
             <div class="modal-questions" id="modalQuestions"></div>
           </div>
           <div class="modal-footer">
-            <button class="modal-button modal-button-secondary" id="modalCancel">Fechar</button>
-            <button class="modal-button modal-button-primary" id="modalUse">Usar Questionário</button>
+            <button class="modal-button modal-button-secondary" id="modalClose2">Fechar</button>
+            <button class="modal-button modal-button-primary" id="createCampaignBtn">Criar Campanha</button>
           </div>
         </div>
       `;
       document.body.appendChild(modalOverlay);
-
+  
       // Adicionar event listeners do modal
       document.getElementById("modalClose").addEventListener("click", () => this._closeModal());
-      document.getElementById("modalCancel").addEventListener("click", () => this._closeModal());
-      document.getElementById("modalUse").addEventListener("click", () => {
-        this.selectedQuestionnaire = document.querySelector(".modal").dataset.questionnaireId;
-        this._closeModal();
-        this.isCreatingCampaign = true;
-        this.render().then(element => {
-          // Substituir o elemento atual pelo novo renderizado
-          if (this.element.parentNode) {
-            this.element.parentNode.replaceChild(element, this.element);
-            this.element = element;
-          }
-        });
-      });
-
+      document.getElementById("modalClose2").addEventListener("click", () => this._closeModal());
+  
       // Fechar o modal ao clicar fora dele
       modalOverlay.addEventListener("click", (e) => {
         if (e.target === modalOverlay) {
           this._closeModal();
         }
       });
+  
+      // Adicionar evento para o botão "Criar Campanha"
+      const createCampaignBtn = document.getElementById("createCampaignBtn");
+      createCampaignBtn.addEventListener("click", () => this._handleCreateCampaign());
     }
   }
 
   async _fetchQuestionnaires() {
-    try {
-      const response = await fetch("/api/questionarios", {
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao carregar questionários: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // Certifique-se de que cada questionário tem uma cor
-      this.questionnaires = data.map(q => {
-        if (!q.color) q.color = this._getRandomColor();
-        return q;
-      });
-    } catch (error) {
-      console.error("Erro ao carregar questionários:", error);
-      // Aplicar cores aleatórias aos questionários padrão
-      this.questionnaires = this.defaultQuestionnaires.map(q => {
-        if (!q.color) q.color = this._getRandomColor();
-        return q;
-      });
-    }
-  }
-
-  _renderContent() {
-    const questionnaireList = this.element.querySelector("#questionnaireList");
-    questionnaireList.innerHTML = this.loading
-      ? this._getLoadingTemplate()
-      : this.error
-      ? this._getErrorTemplate()
-      : this._renderList();
-
-    this.addEventListeners();
-  }
-
-  _renderCampaignForm() {
-    const q = this.questionnaires.find(q => q.id == this.selectedQuestionnaire);
-    this.element.innerHTML = `
-      <div class="create-campaign-card">
-        <h2>Criar Campanha: ${q ? q.titulo : ''}</h2>
-        <form id="create-campaign-form">
-          <div class="form-group">
-            <label for="campaign-name">Nome da Campanha:</label>
-            <input type="text" id="campaign-name" required />
-          </div>
-          <div class="form-group">
-            <label for="campaign-file">Upload CSV (apenas emails):</label>
-            <input type="file" id="campaign-file" accept=".csv" required />
-          </div>
-          <button type="submit" class="btn-primary">Iniciar Campanha</button>
-          <button type="button" id="cancel-campaign-btn" class="btn-secondary">Cancelar</button>
-        </form>
-      </div>
-    `;
-    this._addCampaignFormListeners();
-  }
-
-  _addCampaignFormListeners() {
-    const form = this.element.querySelector('#create-campaign-form');
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      // Simula chamada ao backend
-      alert('Campanha iniciada para questionário ' + this.selectedQuestionnaire);
-      // Volta para a lista de questionários
-      this.isCreatingCampaign = false;
-      this.selectedQuestionnaire = null;
-      this.render().then(element => {
-        if (this.element.parentNode) {
-          this.element.parentNode.replaceChild(element, this.element);
-          this.element = element;
-        }
-      });
+    const response = await fetch("/api/questionnaires", {
+      credentials: "include",
     });
-    
-    const cancelBtn = this.element.querySelector('#cancel-campaign-btn');
-    cancelBtn.addEventListener('click', () => {
-      this.isCreatingCampaign = false;
-      this.selectedQuestionnaire = null;
-      this.render().then(element => {
-        if (this.element.parentNode) {
-          this.element.parentNode.replaceChild(element, this.element);
-          this.element = element;
-        }
-      });
+  
+    if (!response.ok) {
+      throw new Error(`Erro ao carregar questionários: ${response.status}`);
+    }
+  
+    const data = await response.json();
+    // Atribuir cores aleatórias para os questionários
+    this.questionnaires = data.map(q => {
+      if (!q.color) q.color = this._getRandomColor();
+      return q;
     });
   }
 
   _renderList() {
+    if (this.questionnaires.length === 0) {
+      return `
+        <div class="empty-state">
+          <p>Nenhum questionário encontrado.</p>
+        </div>
+      `;
+    }
+
     return this.questionnaires.map(q => {
       const tagsHtml = (q.tags || []).map(tag => 
-        `<span class="card-tag">${tag.nome || tag}</span>`
+        `<span class="card-tag">${tag.name}</span>`
       ).join("");
-      
+
       return `
         <div class="questionnaire-card" data-id="${q.id}">
-          <!-- Barra de cor movida para fora do header e renomeada -->
           <div class="questionnaire-color-bar" style="background-color: ${q.color || this._getRandomColor()};"></div>
           <div class="card-header">
             <div class="card-content">
-              <h3 class="card-title">${q.titulo}</h3>
-              <div class="card-date">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon card-date-icon">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                ${q.date || '01/01/2023'}
-              </div>
-              <p class="card-description">${q.descricao}</p>
+              <h3 class="card-title">${q.title}</h3>
+              <p class="card-description">${q.description || 'Sem descrição disponível'}</p>
               <div class="card-tags">${tagsHtml}</div>
             </div>
           </div>
@@ -367,15 +200,15 @@ export default class QuestionnairesSection {
     }).join("");
   }
   
-  addEventListeners() {
-    // Botão de tentar novamente (em caso de erro)
+  _addEventListeners() {
+    // Adicionar listener para o botão retry
     const retryBtn = this.element.querySelector("#retry-fetch-btn");
     if (retryBtn) {
       retryBtn.addEventListener("click", async () => {
-        this.error = null;
         this.loading = true;
+        this.error = null;
         this._renderContent();
-        
+
         try {
           await this._fetchQuestionnaires();
         } catch (error) {
@@ -387,102 +220,155 @@ export default class QuestionnairesSection {
       });
     }
 
-    // Adicionar event listeners para os cards
+    // Adicionar listeners para os cards de questionário
     const cards = this.element.querySelectorAll(".questionnaire-card");
     cards.forEach(card => {
-      card.addEventListener("click", (e) => {
-        // Ignorar clique nos botões de ação
-        if (!e.target.closest('.card-action')) {
-          const id = card.dataset.id;
-          const questionnaire = this.questionnaires.find(q => q.id == id);
-          if (questionnaire) this._openModal(questionnaire);
-        }
+      card.addEventListener("click", async () => {
+        const id = card.dataset.id;
+        await this._handleQuestionnaireClick(id);
       });
     });
   }
 
-  _openModal(questionnaire) {
-    const modal = document.getElementById("questionnaireModal");
-    const modalContent = modal.querySelector(".modal");
+  async _handleQuestionnaireClick(questionnaireId) {
+    // Encontrar o questionário pelo ID
+    const questionnaire = this.questionnaires.find(q => q.id == questionnaireId);
     
-    modalContent.dataset.questionnaireId = questionnaire.id;
-    document.getElementById("modalTitle").textContent = questionnaire.titulo;
-    document.getElementById("modalDateText").textContent = questionnaire.date || '';
-    document.getElementById("modalDescription").textContent = questionnaire.descricao;
+    if (!questionnaire) return;
+    
+    this.selectedQuestionnaire = questionnaire;
+    
+    // Mostrar modal com loading
+    this._showModalLoading();
+    
+    try {
+      // Buscar perguntas do questionário
+      await this._fetchQuestionnaireDetails(questionnaireId);
+      // Atualizar o conteúdo do modal com os detalhes
+      this._updateModalContent();
+    } catch (error) {
+      console.error("Erro ao carregar detalhes do questionário:", error);
+      // Mostrar mensagem de erro no modal
+      this._showModalError();
+    }
+  }
 
-    const modalTags = document.getElementById("modalTags");
-    modalTags.innerHTML = (questionnaire.tags || [])
-      .map(tag => `<span class="modal-tag">${tag.nome || tag}</span>`)
-      .join("");
-
+  _showModalLoading() {
+    const modal = document.getElementById("questionnaireModal");
     const modalQuestions = document.getElementById("modalQuestions");
-    modalQuestions.innerHTML = (questionnaire.questions || [])
-      .map((q, index) => {
-        // Renderiza a questão baseada no seu tipo
-        return this._renderQuestionByType(q, index);
-      })
-      .join("");
-
+    const modalTitle = document.getElementById("modalTitle");
+    
+    // Definir título do questionário
+    modalTitle.textContent = this.selectedQuestionnaire.titulo || "Questionário";
+    
+    // Mostrar loading nas perguntas
+    modalQuestions.innerHTML = `
+      <div class="loading-template">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Carregando perguntas...</p>
+      </div>
+    `;
+    
+    // Exibir o modal
     modal.classList.add("active");
     document.body.style.overflow = "hidden";
   }
 
-  // Método para renderizar diferentes tipos de perguntas
-  _renderQuestionByType(question, index) {
-    const { enunciado, tipo_pergunta, opcoes } = question;
+  async _fetchQuestionnaireDetails(questionnaireId) {
+    const delay = new Promise(resolve => setTimeout(resolve, 2000)); // Garante 2 segundos de atraso
+  
+    const fetchData = fetch(`/api/questionnaires/${questionnaireId}/questions`, {
+      credentials: "include",
+    }).then(async response => {
+      if (!response.ok) {
+        throw new Error(`Erro ao carregar perguntas: ${response.status}`);
+      }
+      const data = await response.json();
+      this.selectedQuestionnaireData = data;
+    });
+  
+    // Aguarda tanto o fetch quanto o delay
+    await Promise.all([delay, fetchData]);
+  }
+
+  _updateModalContent() {
+    if (!this.selectedQuestionnaire) return;
     
-    // Elementos comuns do cabeçalho da pergunta
+    const modalTitle = document.getElementById("modalTitle");
+    const modalDateText = document.getElementById("modalDateText");
+    const modalDescription = document.getElementById("modalDescription");
+    const modalTags = document.getElementById("modalTags");
+    const modalQuestions = document.getElementById("modalQuestions");
+    
+    modalTitle.textContent = this.selectedQuestionnaire.title;
+    modalDescription.textContent = this.selectedQuestionnaire.description || '';
+    
+    // Renderizar tags
+    modalTags.innerHTML = (this.selectedQuestionnaire.tags || [])
+      .map(tag => `<span class="modal-tag">${tag.name}</span>`)
+      .join("");
+    
+    // Renderizar perguntas
+    if (this.selectedQuestionnaireData && this.selectedQuestionnaireData.length > 0) {
+      modalQuestions.innerHTML = this.selectedQuestionnaireData
+        .map((question, index) => this._renderQuestionTemplate(question, index))
+        .join("");
+    } else {
+      modalQuestions.innerHTML = `<p>Este questionário não possui perguntas.</p>`;
+    }
+  }
+
+  _renderQuestionTemplate(question, index) {
+    const { statement, question_type, options, required } = question;
+  
+    // Ícone para questões obrigatórias
+    const requiredIcon = required
+    ? `<span class="required-icon" title="Esta pergunta é obrigatória">
+         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="red">
+           <circle cx="12" cy="12" r="10" />
+         </svg>
+       </span>`
+    : "";
+  
+    // Renderizar cabeçalho da pergunta
     const headerHtml = `
       <div class="modal-question-header">
         <span class="modal-question-number">${index + 1}.</span>
-        <span class="modal-question-text">${enunciado}</span>
-        <span class="modal-question-type">${this._getQuestionTypeLabel(tipo_pergunta)}</span>
+        <span class="modal-question-text">${statement} ${requiredIcon}</span>
+        <span class="modal-question-type">${this.questionTypes[question_type] || question_type}</span>
       </div>
     `;
-    
-    let optionsHtml = '';
-    
-    // Renderiza diferentes tipos de opções baseadas no tipo da pergunta
-    switch (tipo_pergunta) {
+  
+    // Renderizar opções baseadas no tipo
+    let optionsHtml = "";
+  
+    switch (question_type) {
       case "NUMERIC_SCALE":
-        // Exibe escala numérica horizontalmente
-        optionsHtml = this._renderNumericScale(opcoes);
+        optionsHtml = this._renderNumericScale(options);
         break;
-        
       case "FREE_TEXT":
-        // Campo para texto livre
         optionsHtml = `<div class="modal-text-input-placeholder">Campo para entrada de texto</div>`;
         break;
-        
       case "BINARY":
-        // Opções Sim/Não
-        optionsHtml = this._renderBinaryOptions(opcoes);
+        optionsHtml = this._renderBinaryOptions(options);
         break;
-        
       case "LIKERT_SCALE":
-        // Escala Likert
-        optionsHtml = this._renderLikertScale(opcoes);
+        optionsHtml = this._renderLikertScale(options);
         break;
-        
       case "MULTIPLE_CHOICE_SINGLE":
-        // Múltipla escolha com opção única (radio buttons)
-        optionsHtml = this._renderMultipleChoiceSingle(opcoes);
+        optionsHtml = this._renderMultipleChoiceSingle(options);
         break;
-        
       case "MULTIPLE_CHOICE_MULTIPLE":
-        // Múltipla escolha com seleção múltipla (checkboxes)
-        optionsHtml = this._renderMultipleChoiceMultiple(opcoes);
+        optionsHtml = this._renderMultipleChoiceMultiple(options);
         break;
-        
       default:
-        // Fallback para lista simples
         optionsHtml = `
           <ul class="modal-options-list">
-            ${opcoes.map(option => `<li class="modal-option-item">${option}</li>`).join('')}
+            ${options.map(option => `<li class="modal-option-item">${option.text}</li>`).join("")}
           </ul>
         `;
     }
-    
+  
     return `
       <div class="modal-question">
         ${headerHtml}
@@ -491,18 +377,25 @@ export default class QuestionnairesSection {
     `;
   }
 
-  // Retorna o rótulo amigável para o tipo da pergunta
-  _getQuestionTypeLabel(tipo) {
-    return this.questionTypes[tipo] || tipo;
+  _renderLikertScale(options) {
+    return `
+      <div class="likert-scale-container">
+        ${options.map(option => `
+          <div class="likert-scale-item">
+            <div class="likert-scale-bubble"></div>
+            <span class="likert-scale-label">${option.text}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
   }
 
-  // Renderiza opções para escala numérica horizontalmente
   _renderNumericScale(options) {
     return `
       <div class="numeric-scale-container">
         ${options.map(option => `
           <div class="numeric-scale-item">
-            <span class="numeric-scale-number">${option}</span>
+            <span class="numeric-scale-number">${option.text}</span>
             <div class="numeric-scale-bubble"></div>
           </div>
         `).join('')}
@@ -510,58 +403,50 @@ export default class QuestionnairesSection {
     `;
   }
 
-  // Renderiza opções para perguntas binárias (Sim/Não)
   _renderBinaryOptions(options) {
     return `
       <div class="binary-options-container">
         ${options.map(option => `
           <div class="binary-option">
             <div class="radio-button"></div>
-            <span class="binary-option-text">${option}</span>
+            <span class="binary-option-text">${option.text}</span>
           </div>
         `).join('')}
       </div>
     `;
   }
 
-  // Renderiza opções para escala Likert
-  _renderLikertScale(options) {
-    return `
-      <div class="likert-scale-container">
-        ${options.map((option, i) => `
-          <div class="likert-scale-item">
-            <div class="likert-scale-bubble"></div>
-            <span class="likert-scale-label">${option}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  // Renderiza opções para múltipla escolha com resposta única
   _renderMultipleChoiceSingle(options) {
     return `
       <div class="multiple-choice-container">
-        ${options.map((option, i) => `
+        ${options.map(option => `
           <div class="multiple-choice-single-item">
             <div class="radio-button"></div>
-            <span class="multiple-choice-text">${option}</span>
+            <span class="multiple-choice-text">${option.text}</span>
           </div>
         `).join('')}
       </div>
     `;
   }
 
-  // Renderiza opções para múltipla escolha com seleção múltipla
   _renderMultipleChoiceMultiple(options) {
     return `
       <div class="multiple-choice-container">
-        ${options.map((option, i) => `
+        ${options.map(option => `
           <div class="multiple-choice-multiple-item">
             <div class="checkbox"></div>
-            <span class="multiple-choice-text">${option}</span>
+            <span class="multiple-choice-text">${option.text}</span>
           </div>
         `).join('')}
+      </div>
+    `;
+  }
+
+  _showModalError() {
+    const modalQuestions = document.getElementById("modalQuestions");
+    modalQuestions.innerHTML = `
+      <div class="error-template">
+        <p>Ocorreu um erro ao buscar as perguntas. Tente novamente mais tarde.</p>
       </div>
     `;
   }
@@ -571,14 +456,6 @@ export default class QuestionnairesSection {
     if (modal) {
       modal.classList.remove("active");
       document.body.style.overflow = "";
-    }
-  }
-
-  handleEditQuestionnaire(questionnaireId) {
-    const questionnaire = this.questionnaires.find((q) => q.id == questionnaireId);
-    if (questionnaire) {
-      alert(`Editar questionário: ${questionnaire.titulo}`);
-      // Você pode implementar a lógica de edição aqui
     }
   }
 
@@ -594,17 +471,20 @@ export default class QuestionnairesSection {
   _getErrorTemplate() {
     return `
       <div class="error-template">
-        <p>${this.error || 'Erro desconhecido.'}</p>
+        <p>Não foi possível carregar a lista de questionários.</p>
         <button id="retry-fetch-btn" class="btn-primary">Tentar Novamente</button>
       </div>
     `;
   }
 
   unmount() {
-    // Remover eficientemente todos os listeners clonando e substituindo o elemento
-    if (this.element && this.element.parentNode) {
-      const clone = this.element.cloneNode(true);
-      this.element.parentNode.replaceChild(clone, this.element);
+    // Remover event listeners e elementos do DOM quando o componente for desmontado
+    if (this.element) {
+      // Clonar e substituir para remover todos os listeners
+      if (this.element.parentNode) {
+        const clone = this.element.cloneNode(true);
+        this.element.parentNode.replaceChild(clone, this.element);
+      }
       this.element = null;
     }
   }
