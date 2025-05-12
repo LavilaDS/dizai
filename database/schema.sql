@@ -55,7 +55,7 @@ CREATE TABLE questions (
     questionnaire_id UUID REFERENCES questionnaires(id) ON DELETE CASCADE,
     statement TEXT NOT NULL,
     response_time INT NOT NULL,
-    question_type INTEGER REFERENCES question_types(id) NOT NULL ON DELETE RESTRICT,
+    question_type INTEGER REFERENCES question_types(id) NOT NULL,
     order_number INTEGER,
     required BOOLEAN DEFAULT TRUE
 );
