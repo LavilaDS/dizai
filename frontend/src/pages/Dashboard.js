@@ -6,23 +6,18 @@ import ScrollTopButton from '../components/ScrollTopButton.js';
 // Import section components
 import OverviewSection from '../components/DashboardComponents/OverviewSection.js';
 import QuestionnairesSection from '../components/DashboardComponents/QuestionnairesSection.js';
-import CampaignsSection from '../components/DashboardComponents/CampaignsSection.js';
-import RecipientsSection from '../components/DashboardComponents/RecipientsSection.js';
 import ReportsSection from '../components/DashboardComponents/ReportsSection.js';
-import SettingsSection from '../components/DashboardComponents/SettingsSection.js';
 
 class Dashboard {
   constructor() {
     this.element = document.querySelector('main');
     this.sidebarCollapsed = false;
+    this.initialSection = 'overview';
     this.currentSection = 'overview';
     this.sectionTitles = {
       'overview': 'Visão Geral',
       'questionnaires': 'Questionários',
-      'campaigns': 'Campanhas',
-      'recipients': 'Destinatários',
-      'reports': 'Relatórios',
-      'settings': 'Configurações'
+      'reports': 'Relatórios'
     };
     
     // Component references
@@ -36,6 +31,7 @@ class Dashboard {
   }
 
   async render() {
+    this.currentSection = this.initialSection || 'overview';
     // Create dashboard structure
     this.element.innerHTML = `
       <div class="dashboard-wrapper">
@@ -54,7 +50,7 @@ class Dashboard {
 
     // Render components
     this.renderComponents();
-    this.activateSection(this.currentSection);
+    this.activateSection(this.currentSection, false); // false para não dar pushState na inicialização
   }
 
   renderComponents() {
@@ -84,7 +80,7 @@ class Dashboard {
     if (this.sectionComponents[section]) {
       return this.sectionComponents[section];
     }
-    
+    console.log(`Creating new component for section: ${section}`);
     // Create a new component based on section
     let component;
     switch (section) {
@@ -94,17 +90,8 @@ class Dashboard {
       case 'questionnaires':
         component = new QuestionnairesSection();
         break;
-      case 'campaigns':
-        component = new CampaignsSection();
-        break;
-      case 'recipients':
-        component = new RecipientsSection();
-        break;
       case 'reports':
         component = new ReportsSection();
-        break;
-      case 'settings':
-        component = new SettingsSection();
         break;
       default:
         component = new OverviewSection();
@@ -115,7 +102,7 @@ class Dashboard {
     return component;
   }
 
-  activateSection(section) {
+  async activateSection(section, shouldPushState = true) {
     const mainContent = document.getElementById('dashboard-main-content');
     
     // Update current section
@@ -137,10 +124,14 @@ class Dashboard {
     
     // Render the component
     this.activeSection = component;
-    mainContent.appendChild(component.render());
+    mainContent.appendChild(await component.render());
     
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (shouldPushState) {
+      window.history.pushState({}, '', `/dashboard/${section}`);
+    }
   }
 
   toggleSidebar() {
