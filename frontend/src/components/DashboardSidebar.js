@@ -61,9 +61,10 @@ export default class DashboardSidebar {
     // Section navigation
     const menuItems = this.element.querySelectorAll('.sidebar-menu-item');
     menuItems.forEach(item => {
-      item.addEventListener('click', () => {
+      item.addEventListener('click', (e) => {
         const section = item.getAttribute('data-section');
-        
+        e.preventDefault(); // Adicione esta linha para impedir a navegação padrão
+        e.stopPropagation()
         // Update active menu item
         menuItems.forEach(i => i.classList.remove('active'));
         item.classList.add('active');
