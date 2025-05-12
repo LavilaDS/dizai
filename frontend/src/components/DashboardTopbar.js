@@ -9,7 +9,7 @@ export default class DashboardTopbar {
   render() {
     this.element = document.createElement('header');
     this.element.className = 'topbar';
-
+  
     this.element.innerHTML = `
       <button class="mobile-menu-toggle" id="mobile-menu-toggle">
         <i class="fas fa-bars"></i>
@@ -34,9 +34,6 @@ export default class DashboardTopbar {
             <a href="#" class="dropdown-item">
               <i class="fas fa-user"></i> Meu Perfil
             </a>
-            <a href="#" class="dropdown-item">
-              <i class="fas fa-building"></i> Empresa
-            </a>
             <div class="dropdown-divider"></div>
             <a href="/login" class="dropdown-item" id="logout-btn">
               <i class="fas fa-sign-out-alt"></i> Sair
@@ -45,7 +42,7 @@ export default class DashboardTopbar {
         </div>
       </div>
     `;
-
+  
     this.addEventListeners();
     return this.element;
   }
