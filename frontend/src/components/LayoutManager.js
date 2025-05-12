@@ -9,7 +9,7 @@ export default class LayoutManager {
     this.contentContainer = null;
     
     // Routes that should use the dashboard layout
-    this.dashboardRoutes = ['/dashboard', '/create-campaign'];
+    this.dashboardRoutes = ['/dashboard'];
   }
 
   initialize() {
