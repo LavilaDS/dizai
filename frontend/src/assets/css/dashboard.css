@@ -861,7 +861,7 @@
 }
 
 /* Scroll to top button */
-.dashboard-wrapper .scroll-top {
+.scroll-top {
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -882,12 +882,12 @@
   border: none;
 }
 
-.dashboard-wrapper .scroll-top.visible {
+.scroll-top.visible {
   opacity: 1;
   visibility: visible;
 }
 
-.dashboard-wrapper .scroll-top:hover {
+.scroll-top:hover {
   transform: translateY(-5px);
 }
 
@@ -1161,7 +1161,7 @@
   }
   
   /* Better scroll top button */
-  .dashboard-wrapper .scroll-top {
+  .scroll-top {
     bottom: 15px;
     right: 15px;
     width: 35px;
