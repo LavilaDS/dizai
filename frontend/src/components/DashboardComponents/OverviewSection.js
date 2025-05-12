@@ -17,25 +17,7 @@ export default class OverviewSection {
           </div>
           <div class="quick-action-content">
             <div class="quick-action-title">Nova Campanha</div>
-            <div class="quick-action-description">Criar e enviar um questionário</div>
-          </div>
-        </button>
-        <button class="quick-action-btn">
-          <div class="quick-action-icon secondary">
-            <i class="fas fa-file-alt"></i>
-          </div>
-          <div class="quick-action-content">
-            <div class="quick-action-title">Novo Questionário</div>
-            <div class="quick-action-description">Criar um modelo personalizado</div>
-          </div>
-        </button>
-        <button class="quick-action-btn">
-          <div class="quick-action-icon accent">
-            <i class="fas fa-users"></i>
-          </div>
-          <div class="quick-action-content">
-            <div class="quick-action-title">Importar Contatos</div>
-            <div class="quick-action-description">Adicionar lista de destinatários</div>
+            <div class="quick-action-description">Selecionar questionário</div>
           </div>
         </button>
       </div>
@@ -316,7 +298,7 @@ export default class OverviewSection {
     const createCampaignBtn = this.element.querySelector('#create-campaign-btn');
     if (createCampaignBtn) {
       createCampaignBtn.addEventListener('click', () => {
-        window.history.pushState({}, '', '/create-campaign');
+        window.history.pushState({}, '', '/dashboard/questionnaires');
         window.dispatchEvent(new Event('popstate'));
       });
     }

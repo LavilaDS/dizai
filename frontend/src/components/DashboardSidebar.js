@@ -24,33 +24,18 @@ export default class DashboardSidebar {
       </div>
 
       <nav class="sidebar-menu">
-        <a class="sidebar-menu-item active" data-section="overview">
+        <a href="/dashboard/overview" class="sidebar-menu-item" data-section="overview">
           <i class="fas fa-home"></i>
           <span class="menu-text">Visão Geral</span>
         </a>
-        <a class="sidebar-menu-item" data-section="questionnaires">
+        <a href="/dashboard/questionnaires" class="sidebar-menu-item" data-section="questionnaires">
           <i class="fas fa-file-alt"></i>
           <span class="menu-text">Questionários</span>
         </a>
-        <a class="sidebar-menu-item" data-section="campaigns">
-          <i class="fas fa-paper-plane"></i>
-          <span class="menu-text">Campanhas</span>
-          <span class="badge">2</span>
-        </a>
-        <a class="sidebar-menu-item" data-section="recipients">
-          <i class="fas fa-users"></i>
-          <span class="menu-text">Destinatários</span>
-        </a>
-        
         <div class="sidebar-divider"></div>
-        
-        <a class="sidebar-menu-item" data-section="reports">
+        <a href="/dashboard/reports" class="sidebar-menu-item" data-section="reports">
           <i class="fas fa-chart-bar"></i>
           <span class="menu-text">Relatórios</span>
-        </a>
-        <a class="sidebar-menu-item" data-section="settings">
-          <i class="fas fa-cog"></i>
-          <span class="menu-text">Configurações</span>
         </a>
       </nav>
       

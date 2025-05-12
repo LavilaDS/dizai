@@ -11,7 +11,7 @@ export default class Header {
         this.element.innerHTML = `
             <div class="container">
             <div class="logo">
-                <a href="/"><span>Diz</span>Aí</a>
+                <a href="/home"><span>Diz</span>Aí</a>
             </div>
 
             <div class="header-buttons">

@@ -1,4 +1,5 @@
 import LayoutManager from "./components/LayoutManager.js";
+import Dashboard from "./pages/Dashboard.js";
 
 class Router {
     constructor(routes) {
@@ -24,16 +25,33 @@ class Router {
     async handleRoute() {
       window.scrollTo(0, 0);
       const path = window.location.pathname;
-      const route = this.routes[path] || this.routes['/'];
+      let ComponentToRender;
+      let initialSection = null;
+  
+      if (path.startsWith("/dashboard")) {
+        ComponentToRender = this.routes["/dashboard"];
+        const parts = path.split("/");
+        if (parts.length > 2 && parts[2] !== "") {
+          initialSection = parts.slice(2).join("-");
+        } else {
+          initialSection = "overview";
+        }
+      } else {
+        ComponentToRender = this.routes[path] || this.routes["/"];
+      }
   
       if (this.currentComponent && this.currentComponent.unmount) {
         this.currentComponent.unmount();
       }
-      this.layoutManager.updateLayout();
-      const component = new route();
-      await component.render();
-
-      this.currentComponent = component;
+  
+      const componentInstance = new ComponentToRender();
+      if (componentInstance instanceof Dashboard && initialSection) {
+        componentInstance.initialSection = initialSection;
+      }
+  
+      await componentInstance.render();
+      this.layoutManager.initialize();
+      this.currentComponent = componentInstance;
     }
   
     navigate(url) {
