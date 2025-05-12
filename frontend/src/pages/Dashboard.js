@@ -12,8 +12,26 @@ class Dashboard {
   constructor() {
     this.element = document.querySelector('main');
     this.sidebarCollapsed = false;
-    this.initialSection = 'overview';
-    this.currentSection = 'overview';
+    
+    // Define seção inicial com base na URL
+    const path = window.location.pathname;
+    const pathSegments = path.split('/').filter(segment => segment.length > 0);
+    
+    if (pathSegments.length >= 1 && pathSegments[0] === 'dashboard') {
+      // Se for apenas /dashboard/ ou /dashboard, define como overview
+      if (pathSegments.length === 1) {
+        this.initialSection = 'overview';
+        // Atualiza URL para incluir a seção
+        window.history.replaceState({}, '', '/dashboard/overview');
+      } else {
+        // Se já tem uma seção especificada (/dashboard/alguma-secao)
+        this.initialSection = pathSegments[1] || 'overview';
+      }
+    } else {
+      this.initialSection = 'overview';
+    }
+    
+    this.currentSection = this.initialSection;
     this.sectionTitles = {
       'overview': 'Visão Geral',
       'questionnaires': 'Questionários',
@@ -114,26 +132,35 @@ class Dashboard {
     // Update topbar title
     this.topbar.setTitle(this.sectionTitles[section]);
     
-    // Remove current active section if exists
-    if (this.activeSection) {
-      this.activeSection.element.remove();
-    }
-    
-    // Get component for the section
+    // Verificar se já temos um elemento renderizado para este componente
     const component = this.getComponentForSection(section);
     
-    // Render the component
+    // Remover a seção ativa atual apenas se for diferente da nova
+    if (this.activeSection && this.activeSection !== component) {
+        if (this.activeSection.element) {
+            this.activeSection.element.remove();
+        }
+    }
+    
+    // Se o componente já tiver um elemento e ele não estiver no DOM, anexá-lo
+    if (component.element) {
+        if (!component.element.isConnected) {
+            mainContent.appendChild(component.element);
+        }
+    } else {
+        // Renderizar o componente pela primeira vez
+        mainContent.appendChild(await component.render());
+    }
+    
     this.activeSection = component;
-    mainContent.appendChild(await component.render());
     
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (shouldPushState) {
-      window.history.pushState({}, '', `/dashboard/${section}`);
+        window.history.pushState({}, '', `/dashboard/${section}`);
     }
   }
-
   toggleSidebar() {
     this.sidebar.toggleCollapse();
     document.querySelector('.main-content').style.marginLeft = 
@@ -163,3 +190,4 @@ class Dashboard {
 }
 
 export default Dashboard;
+
