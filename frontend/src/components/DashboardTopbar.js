@@ -1,12 +1,16 @@
-// Dashboard Topbar Component
+import Logout from '../utils/logout.js'
+import { showNotification } from '../utils/notification.js';
+
 export default class DashboardTopbar {
   constructor(toggleSidebarMobileCallback, currentSection) {
     this.element = null;
     this.toggleSidebarMobileCallback = toggleSidebarMobileCallback;
     this.currentSection = currentSection || 'Visão Geral';
   }
+  
 
   render() {
+    console.log("AAAAAAAAAAAAAA", localStorage.getItem("user"));
     this.element = document.createElement('header');
     this.element.className = 'topbar';
   
@@ -24,8 +28,8 @@ export default class DashboardTopbar {
           <div class="user-profile" id="user-profile-btn">
             <div class="user-avatar">JS</div>
             <div class="user-info">
-              <div class="user-name">João Silva</div>
-              <div class="user-role">Administrador</div>
+              <div class="user-name">${localStorage.getItem("user")}</div>
+              <div class="user-role">Gestor</div>
             </div>
             <i class="fas fa-chevron-down"></i>
           </div>
@@ -83,11 +87,16 @@ export default class DashboardTopbar {
     // Logout Button
     const logoutBtn = this.element.querySelector('#logout-btn');
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', (e) => {
+      logoutBtn.addEventListener('click', async(e) => {
         e.preventDefault();
-        localStorage.removeItem('authToken');
-        window.history.pushState({}, '', '/login');
-        window.dispatchEvent(new Event('popstate'));
+        const sucess = await Logout();
+        if(sucess) {
+          window.history.pushState({}, '', '/login');
+          window.dispatchEvent(new Event('popstate'));
+          showNotification("Logout realizado com sucesso!", "success");
+        } else {
+          showNotification("Erro ao realizar logout. Tente novamente.", "error");
+        }
       });
     }
   }
