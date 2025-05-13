@@ -1,4 +1,5 @@
-// QuestionnairesSection.js - Componente principal para visualização e gerenciamento de questionários
+// frontend/src/components/DashboardComponents/QuestionnairesSection.js
+import { showNotification } from '../../utils/notification.js'; // Importar a função de notificação
 
 export default class QuestionnairesSection {
   constructor() {
@@ -7,10 +8,20 @@ export default class QuestionnairesSection {
     this.loading = false;
     this.error = null;
     this.selectedQuestionnaire = null;
-    this.selectedQuestionnaireData = null;
-    this.modalElement = null;
-    
-    // Tipos de perguntas padronizados
+    this.selectedQuestionnaireData = null; // Para perguntas do questionário selecionado
+
+    // Para o modal de campanha
+    this.campaignModalElement = null;
+    this.csvFile = null;
+    // Removido this.validContacts e this.invalidContacts, pois usaremos allProcessedContacts
+    this.allProcessedContacts = []; // Array único para todos os contatos processados
+    this.campaignModalStep = 1; // 1: Upload, 2: Results/Edit
+
+    // Para o modal de edição de contato
+    this.editContactModalElement = null;
+    this.contactBeingEdited = null;
+
+
     this.questionTypes = {
       MULTIPLE_CHOICE_SINGLE: "Múltipla Escolha (Única)",
       MULTIPLE_CHOICE_MULTIPLE: "Múltipla Escolha (Múltipla)",
@@ -20,33 +31,37 @@ export default class QuestionnairesSection {
       FREE_TEXT: "Texto Livre"
     };
     
-    // Paleta de cores para os questionários
     this.colorPalette = [
-      "#4649FF", // Azul primário
-      "#8A4FFF", // Roxo
-      "#FF6B4A", // Laranja
-      "#3AC0A0", // Verde azulado
-      "#FF4A8D", // Rosa
-      "#407BFF", // Azul mais claro
-      "#9656EB", // Roxo médio
-      "#FF7E2E", // Laranja mais claro
-      "#2ADBBD", // Verde água
-      "#FF5C7F"  // Rosa mais claro
+      "#4649FF", "#8A4FFF", "#FF6B4A", "#3AC0A0", "#FF4A8D",
+      "#407BFF", "#9656EB", "#FF7E2E", "#2ADBBD", "#FF5C7F"
     ];
   }
 
-  // Gera uma cor aleatória da paleta
   _getRandomColor() {
     return this.colorPalette[Math.floor(Math.random() * this.colorPalette.length)];
   }
 
+  generateSimpleUniqueId() {
+    const timestampPart = Date.now().toString(36);
+    const randomPart = Math.random().toString(36).substring(2);
+    return timestampPart + randomPart;
+  }
+  
+  // Função auxiliar para validar um único contato (reutilizável)
+  _validateContactData(contactData) {
+    contactData.motivoInvalidez = []; 
+    if (!this._validateCsvName(contactData.nome)) contactData.motivoInvalidez.push("Nome inválido");
+    if (!this._validateCsvEmail(contactData.email)) contactData.motivoInvalidez.push("Email inválido");
+    if (!this._validateCsvPhoneNumber(contactData.telefone)) contactData.motivoInvalidez.push("Telefone inválido");
+    contactData.isValid = contactData.motivoInvalidez.length === 0;
+    return contactData.isValid; 
+  }
+
   async render() {
-    // Criar o elemento principal
     this.element = document.createElement("section");
     this.element.id = "questionnaires-section";
     this.element.className = "dashboard-section active";
   
-    // Estrutura HTML básica com mensagem de carregamento inicial
     this.element.innerHTML = `
       <div class="container">
         <header class="content-header">
@@ -54,20 +69,16 @@ export default class QuestionnairesSection {
           <p class="page-description">Selecione um questionário para visualizar suas perguntas e opções de resposta.</p>
         </header>
         <div class="questionnaire-list" id="questionnaireList">
-          <div class="loading-template">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Carregando questionários, por favor aguarde...</p>
-          </div>
+          ${this._getLoadingTemplate()}
         </div>
       </div>
     `;
   
-    // Criar o modal (se ainda não existir)
-    this._createModalIfNeeded();
+    this._createQuestionnaireViewModalIfNeeded();
+    this._createCampaignModalIfNeeded(); 
+    this._createEditContactModalIfNeeded(); 
   
-    // Iniciar carregamento dos questionários
     this.loading = true;
-  
     try {
       await this._fetchQuestionnaires();
     } catch (error) {
@@ -83,7 +94,6 @@ export default class QuestionnairesSection {
 
   _renderContent() {
     const questionnaireList = this.element.querySelector("#questionnaireList");
-    
     if (this.loading) {
       questionnaireList.innerHTML = this._getLoadingTemplate();
     } else if (this.error) {
@@ -91,228 +101,134 @@ export default class QuestionnairesSection {
     } else {
       questionnaireList.innerHTML = this._renderList();
     }
-
     this._addEventListeners();
   }
 
-  // Criação do modal se ele não existir no DOM
-  _createModalIfNeeded() {
-    if (!document.getElementById("questionnaireModal")) {
+  _createQuestionnaireViewModalIfNeeded() {
+    if (!document.getElementById("questionnaireViewModal")) {
       const modalOverlay = document.createElement("div");
-      modalOverlay.id = "questionnaireModal";
+      modalOverlay.id = "questionnaireViewModal";
       modalOverlay.className = "modal-overlay";
       modalOverlay.innerHTML = `
         <div class="modal">
           <div class="modal-header">
-            <h2 class="modal-title" id="modalTitle">Título do Questionário</h2>
-            <button class="modal-close" id="modalClose">
+            <h2 class="modal-title" id="questionnaireViewModalTitle">Título do Questionário</h2>
+            <button class="modal-close" id="questionnaireViewModalCloseBtn">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
           </div>
           <div class="modal-body">
             <div class="modal-info">
               <div class="modal-date">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon card-date-icon">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span id="modalDateText"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon card-date-icon"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span id="questionnaireViewModalDateText"></span>
               </div>
-              <p class="modal-description" id="modalDescription"></p>
-              <div class="modal-tags" id="modalTags"></div>
+              <p class="modal-description" id="questionnaireViewModalDescription"></p>
+              <div class="modal-tags" id="questionnaireViewModalTags"></div>
             </div>
             <h3 class="modal-section-title">Perguntas</h3>
-            <div class="modal-questions" id="modalQuestions"></div>
+            <div class="modal-questions" id="questionnaireViewModalQuestions"></div>
           </div>
           <div class="modal-footer">
-            <button class="modal-button modal-button-secondary" id="modalClose2">Fechar</button>
-            <button class="modal-button modal-button-primary" id="createCampaignBtn">Criar Campanha</button>
+            <button class="modal-button modal-button-secondary" id="questionnaireViewModalCloseBtn2">Fechar</button>
+            <button class="modal-button modal-button-primary" id="questionnaireViewModalCreateCampaignBtn">Aplicar Questionário</button>
           </div>
-        </div>
-      `;
+        </div>`; // Corrigido aqui
       document.body.appendChild(modalOverlay);
   
-      // Adicionar event listeners do modal
-      document.getElementById("modalClose").addEventListener("click", () => this._closeModal());
-      document.getElementById("modalClose2").addEventListener("click", () => this._closeModal());
-  
-      // Fechar o modal ao clicar fora dele
+      modalOverlay.querySelector("#questionnaireViewModalCloseBtn").addEventListener("click", () => this._closeQuestionnaireViewModal());
+      modalOverlay.querySelector("#questionnaireViewModalCloseBtn2").addEventListener("click", () => this._closeQuestionnaireViewModal());
+      modalOverlay.querySelector("#questionnaireViewModalCreateCampaignBtn").addEventListener("click", () => this._handleOpenCampaignModal());
+      
       modalOverlay.addEventListener("click", (e) => {
-        if (e.target === modalOverlay) {
-          this._closeModal();
-        }
+        if (e.target === modalOverlay) this._closeQuestionnaireViewModal();
       });
-  
-      // Adicionar evento para o botão "Criar Campanha"
-      const createCampaignBtn = document.getElementById("createCampaignBtn");
-      createCampaignBtn.addEventListener("click", () => this._handleCreateCampaign());
     }
   }
 
   async _fetchQuestionnaires() {
-    const response = await fetch("/api/questionnaires", {
-      credentials: "include",
-    });
-  
-    if (!response.ok) {
-      throw new Error(`Erro ao carregar questionários: ${response.status}`);
-    }
-  
+    const response = await fetch("/api/questionnaires", { credentials: "include" });
+    if (!response.ok) throw new Error(`Erro ${response.status}`);
     const data = await response.json();
-    // Atribuir cores aleatórias para os questionários
-    this.questionnaires = data.map(q => {
-      if (!q.color) q.color = this._getRandomColor();
-      return q;
-    });
+    this.questionnaires = data.map(q => ({ ...q, color: q.color || this._getRandomColor() }));
   }
 
   _renderList() {
-    if (this.questionnaires.length === 0) {
-      return `
-        <div class="empty-state">
-          <p>Nenhum questionário encontrado.</p>
-        </div>
-      `;
-    }
-
-    return this.questionnaires.map(q => {
-      const tagsHtml = (q.tags || []).map(tag => 
-        `<span class="card-tag">${tag.name}</span>`
-      ).join("");
-
-      return `
-        <div class="questionnaire-card" data-id="${q.id}">
-          <div class="questionnaire-color-bar" style="background-color: ${q.color || this._getRandomColor()};"></div>
-          <div class="card-header">
-            <div class="card-content">
-              <h3 class="card-title">${q.title}</h3>
-              <p class="card-description">${q.description || 'Sem descrição disponível'}</p>
-              <div class="card-tags">${tagsHtml}</div>
-            </div>
+    if (this.questionnaires.length === 0) return `<div class="empty-state"><p>Nenhum questionário encontrado.</p></div>`;
+    return this.questionnaires.map(q => `
+      <div class="questionnaire-card" data-id="${q.id}">
+        <div class="questionnaire-color-bar" style="background-color: ${q.color};"></div>
+        <div class="card-header">
+          <div class="card-content">
+            <h3 class="card-title">${q.title}</h3>
+            <p class="card-description">${q.description || 'Sem descrição'}</p>
+            <div class="card-tags">${(q.tags || []).map(tag => `<span class="card-tag">${tag.name}</span>`).join("")}</div>
           </div>
         </div>
-      `;
-    }).join("");
+      </div>`).join("");
   }
   
   _addEventListeners() {
-    // Adicionar listener para o botão retry
     const retryBtn = this.element.querySelector("#retry-fetch-btn");
     if (retryBtn) {
       retryBtn.addEventListener("click", async () => {
-        this.loading = true;
-        this.error = null;
-        this._renderContent();
-
-        try {
-          await this._fetchQuestionnaires();
-        } catch (error) {
-          this.error = error.message || "Erro ao carregar questionários";
-        } finally {
-          this.loading = false;
-          this._renderContent();
-        }
+        this.loading = true; this.error = null; this._renderContent();
+        try { await this._fetchQuestionnaires(); }
+        catch (error) { this.error = error.message || "Erro"; }
+        finally { this.loading = false; this._renderContent(); }
       });
     }
-
-    // Adicionar listeners para os cards de questionário
-    const cards = this.element.querySelectorAll(".questionnaire-card");
-    cards.forEach(card => {
-      card.addEventListener("click", async () => {
-        const id = card.dataset.id;
-        await this._handleQuestionnaireClick(id);
-      });
+    this.element.querySelectorAll(".questionnaire-card").forEach(card => {
+      card.addEventListener("click", async () => await this._handleQuestionnaireCardClick(card.dataset.id));
     });
   }
 
-  async _handleQuestionnaireClick(questionnaireId) {
-    // Encontrar o questionário pelo ID
-    const questionnaire = this.questionnaires.find(q => q.id == questionnaireId);
+  async _handleQuestionnaireCardClick(questionnaireId) {
+    this.selectedQuestionnaire = this.questionnaires.find(q => q.id == questionnaireId);
+    if (!this.selectedQuestionnaire) return;
     
-    if (!questionnaire) return;
-    
-    this.selectedQuestionnaire = questionnaire;
-    
-    // Mostrar modal com loading
-    this._showModalLoading();
-    
+    this._showQuestionnaireViewModalLoading();
     try {
-      // Buscar perguntas do questionário
       await this._fetchQuestionnaireDetails(questionnaireId);
-      // Atualizar o conteúdo do modal com os detalhes
-      this._updateModalContent();
+      this._updateQuestionnaireViewModalContent();
     } catch (error) {
-      console.error("Erro ao carregar detalhes do questionário:", error);
-      // Mostrar mensagem de erro no modal
-      this._showModalError();
+      console.error("Erro ao carregar detalhes:", error);
+      this._showQuestionnaireViewModalError();
     }
   }
 
-  _showModalLoading() {
-    const modal = document.getElementById("questionnaireModal");
-    const modalQuestions = document.getElementById("modalQuestions");
-    const modalTitle = document.getElementById("modalTitle");
+  _showQuestionnaireViewModalLoading() {
+    const modal = document.getElementById("questionnaireViewModal");
+    modal.querySelector("#questionnaireViewModalTitle").textContent = this.selectedQuestionnaire.title || "Questionário";
+    const createdDate = this.selectedQuestionnaire.createdAt ? new Date(this.selectedQuestionnaire.createdAt) : new Date();
+    modal.querySelector("#questionnaireViewModalDateText").textContent = `Criado em ${createdDate.toLocaleDateString('pt-BR')}`;
+    modal.querySelector("#questionnaireViewModalDescription").textContent = this.selectedQuestionnaire.description || "Sem descrição.";
+    modal.querySelector("#questionnaireViewModalTags").innerHTML = (this.selectedQuestionnaire.tags || [])
+      .map(tag => `<span class="modal-tag">${tag.name}</span>`).join("");
+    modal.querySelector("#questionnaireViewModalQuestions").innerHTML = this._getLoadingTemplate("Carregando perguntas...");
     
-    // Definir título do questionário
-    modalTitle.textContent = this.selectedQuestionnaire.titulo || "Questionário";
-    
-    // Mostrar loading nas perguntas
-    modalQuestions.innerHTML = `
-      <div class="loading-template">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p>Carregando perguntas...</p>
-      </div>
-    `;
-    
-    // Exibir o modal
     modal.classList.add("active");
     document.body.style.overflow = "hidden";
   }
 
   async _fetchQuestionnaireDetails(questionnaireId) {
-    const delay = new Promise(resolve => setTimeout(resolve, 2000)); // Garante 2 segundos de atraso
-  
-    const fetchData = fetch(`/api/questionnaires/${questionnaireId}/questions`, {
-      credentials: "include",
-    }).then(async response => {
-      if (!response.ok) {
-        throw new Error(`Erro ao carregar perguntas: ${response.status}`);
-      }
-      const data = await response.json();
-      this.selectedQuestionnaireData = data;
-    });
-  
-    // Aguarda tanto o fetch quanto o delay
+    const delay = new Promise(resolve => setTimeout(resolve, 500));
+    const fetchData = fetch(`/api/questionnaires/${questionnaireId}/questions`, { credentials: "include" })
+      .then(async response => {
+        if (!response.ok) throw new Error(`Erro ${response.status}`);
+        this.selectedQuestionnaireData = await response.json();
+      });
     await Promise.all([delay, fetchData]);
   }
 
-  _updateModalContent() {
-    if (!this.selectedQuestionnaire) return;
-    
-    const modalTitle = document.getElementById("modalTitle");
-    const modalDateText = document.getElementById("modalDateText");
-    const modalDescription = document.getElementById("modalDescription");
-    const modalTags = document.getElementById("modalTags");
-    const modalQuestions = document.getElementById("modalQuestions");
-    
-    modalTitle.textContent = this.selectedQuestionnaire.title;
-    modalDescription.textContent = this.selectedQuestionnaire.description || '';
-    
-    // Renderizar tags
-    modalTags.innerHTML = (this.selectedQuestionnaire.tags || [])
-      .map(tag => `<span class="modal-tag">${tag.name}</span>`)
-      .join("");
-    
-    // Renderizar perguntas
+  _updateQuestionnaireViewModalContent() {
+    const modalQuestions = document.getElementById("questionnaireViewModalQuestions");
     if (this.selectedQuestionnaireData && this.selectedQuestionnaireData.length > 0) {
       modalQuestions.innerHTML = this.selectedQuestionnaireData
-        .map((question, index) => this._renderQuestionTemplate(question, index))
-        .join("");
+        .sort((a,b) => a.order_number - b.order_number)
+        .map((q, i) => this._renderQuestionTemplate(q, i)).join("");
     } else {
       modalQuestions.innerHTML = `<p>Este questionário não possui perguntas.</p>`;
     }
@@ -320,172 +236,542 @@ export default class QuestionnairesSection {
 
   _renderQuestionTemplate(question, index) {
     const { statement, question_type, options, required } = question;
-  
-    // Ícone para questões obrigatórias
-    const requiredIcon = required
-    ? `<span class="required-icon" title="Esta pergunta é obrigatória">
-         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="red">
-           <circle cx="12" cy="12" r="10" />
-         </svg>
-       </span>`
-    : "";
-  
-    // Renderizar cabeçalho da pergunta
-    const headerHtml = `
-      <div class="modal-question-header">
-        <span class="modal-question-number">${index + 1}.</span>
-        <span class="modal-question-text">${statement} ${requiredIcon}</span>
-        <span class="modal-question-type">${this.questionTypes[question_type] || question_type}</span>
-      </div>
-    `;
-  
-    // Renderizar opções baseadas no tipo
+    const requiredIcon = required ? `<span class="required-icon" title="Obrigatória"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="red"><circle cx="12" cy="12" r="10" /></svg></span>` : "";
+    const headerHtml = `<div class="modal-question-header"><span class="modal-question-number">${index + 1}.</span><span class="modal-question-text">${statement} ${requiredIcon}</span><span class="modal-question-type">${this.questionTypes[question_type] || question_type}</span></div>`;
     let optionsHtml = "";
-  
     switch (question_type) {
-      case "NUMERIC_SCALE":
-        optionsHtml = this._renderNumericScale(options);
-        break;
-      case "FREE_TEXT":
-        optionsHtml = `<div class="modal-text-input-placeholder">Campo para entrada de texto</div>`;
-        break;
-      case "BINARY":
-        optionsHtml = this._renderBinaryOptions(options);
-        break;
-      case "LIKERT_SCALE":
-        optionsHtml = this._renderLikertScale(options);
-        break;
-      case "MULTIPLE_CHOICE_SINGLE":
-        optionsHtml = this._renderMultipleChoiceSingle(options);
-        break;
-      case "MULTIPLE_CHOICE_MULTIPLE":
-        optionsHtml = this._renderMultipleChoiceMultiple(options);
-        break;
-      default:
-        optionsHtml = `
-          <ul class="modal-options-list">
-            ${options.map(option => `<li class="modal-option-item">${option.text}</li>`).join("")}
-          </ul>
-        `;
+      case "NUMERIC_SCALE": optionsHtml = this._renderNumericScale(options); break;
+      case "FREE_TEXT": optionsHtml = `<div class="modal-text-input-placeholder">Campo para entrada de texto</div>`; break;
+      case "BINARY": optionsHtml = this._renderBinaryOptions(options); break;
+      case "LIKERT_SCALE": optionsHtml = this._renderLikertScale(options); break;
+      case "MULTIPLE_CHOICE_SINGLE": optionsHtml = this._renderMultipleChoiceSingle(options); break;
+      case "MULTIPLE_CHOICE_MULTIPLE": optionsHtml = this._renderMultipleChoiceMultiple(options); break;
+      default: optionsHtml = `<ul class="modal-options-list">${(options || []).map(opt => `<li class="modal-option-item">${opt.text}</li>`).join("")}</ul>`;
     }
-  
-    return `
-      <div class="modal-question">
-        ${headerHtml}
-        ${optionsHtml}
-      </div>
-    `;
+    return `<div class="modal-question">${headerHtml}${optionsHtml}</div>`;
   }
 
-  _renderLikertScale(options) {
-    return `
-      <div class="likert-scale-container">
-        ${options.map(option => `
-          <div class="likert-scale-item">
-            <div class="likert-scale-bubble"></div>
-            <span class="likert-scale-label">${option.text}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
+  _renderLikertScale(options) { return `<div class="likert-scale-container">${(options || []).map(o => `<div class="likert-scale-item"><div class="likert-scale-bubble"></div><span class="likert-scale-label">${o.text}</span></div>`).join('')}</div>`; }
+  _renderNumericScale(options) { return `<div class="numeric-scale-container">${(options || []).map(o => `<div class="numeric-scale-item"><span class="numeric-scale-number">${o.text}</span><div class="numeric-scale-bubble"></div></div>`).join('')}</div>`; }
+  _renderBinaryOptions(options) { return `<div class="binary-options-container">${(options || []).map(o => `<div class="binary-option"><div class="radio-button"></div><span class="binary-option-text">${o.text}</span></div>`).join('')}</div>`; }
+  _renderMultipleChoiceSingle(options) { return `<div class="multiple-choice-container">${(options || []).map(o => `<div class="multiple-choice-single-item"><div class="radio-button"></div><span class="multiple-choice-text">${o.text}</span></div>`).join('')}</div>`; }
+  _renderMultipleChoiceMultiple(options) { return `<div class="multiple-choice-container">${(options || []).map(o => `<div class="multiple-choice-multiple-item"><div class="checkbox"></div><span class="multiple-choice-text">${o.text}</span></div>`).join('')}</div>`; }
+
+  _showQuestionnaireViewModalError() {
+    document.getElementById("questionnaireViewModalQuestions").innerHTML = `<div class="error-template"><p>Erro ao buscar perguntas.</p></div>`;
   }
 
-  _renderNumericScale(options) {
-    return `
-      <div class="numeric-scale-container">
-        ${options.map(option => `
-          <div class="numeric-scale-item">
-            <span class="numeric-scale-number">${option.text}</span>
-            <div class="numeric-scale-bubble"></div>
-          </div>
-        `).join('')}
-      </div>
-    `;
+  _closeQuestionnaireViewModal() {
+    const modal = document.getElementById("questionnaireViewModal");
+    if (modal) modal.classList.remove("active");
+    document.body.style.overflow = "";
   }
 
-  _renderBinaryOptions(options) {
-    return `
-      <div class="binary-options-container">
-        ${options.map(option => `
-          <div class="binary-option">
-            <div class="radio-button"></div>
-            <span class="binary-option-text">${option.text}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
+  _getLoadingTemplate(message = "Carregando...") {
+    return `<div class="loading-template"><i class="fas fa-spinner fa-spin"></i><p>${message}</p></div>`;
   }
-
-  _renderMultipleChoiceSingle(options) {
-    return `
-      <div class="multiple-choice-container">
-        ${options.map(option => `
-          <div class="multiple-choice-single-item">
-            <div class="radio-button"></div>
-            <span class="multiple-choice-text">${option.text}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  _renderMultipleChoiceMultiple(options) {
-    return `
-      <div class="multiple-choice-container">
-        ${options.map(option => `
-          <div class="multiple-choice-multiple-item">
-            <div class="checkbox"></div>
-            <span class="multiple-choice-text">${option.text}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  _showModalError() {
-    const modalQuestions = document.getElementById("modalQuestions");
-    modalQuestions.innerHTML = `
-      <div class="error-template">
-        <p>Ocorreu um erro ao buscar as perguntas. Tente novamente mais tarde.</p>
-      </div>
-    `;
-  }
-
-  _closeModal() {
-    const modal = document.getElementById("questionnaireModal");
-    if (modal) {
-      modal.classList.remove("active");
-      document.body.style.overflow = "";
-    }
-  }
-
-  _getLoadingTemplate() {
-    return `
-      <div class="loading-template">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p>Carregando questionários...</p>
-      </div>
-    `;
-  }
-
   _getErrorTemplate() {
-    return `
-      <div class="error-template">
-        <p>Não foi possível carregar a lista de questionários.</p>
-        <button id="retry-fetch-btn" class="btn-primary">Tentar Novamente</button>
-      </div>
-    `;
+    return `<div class="error-template"><p>${this.error}</p><button id="retry-fetch-btn" class="btn-primary">Tentar Novamente</button></div>`;
   }
 
   unmount() {
-    // Remover event listeners e elementos do DOM quando o componente for desmontado
-    if (this.element) {
-      // Clonar e substituir para remover todos os listeners
-      if (this.element.parentNode) {
-        const clone = this.element.cloneNode(true);
-        this.element.parentNode.replaceChild(clone, this.element);
-      }
-      this.element = null;
+    if (this.element && this.element.parentNode) {
+        this.element.parentNode.removeChild(this.element);
     }
+    const qViewModal = document.getElementById("questionnaireViewModal");
+    if (qViewModal) qViewModal.remove();
+    const cModal = document.getElementById("campaignModal");
+    if (cModal) cModal.remove();
+    const eModal = document.getElementById("editContactModal");
+    if (eModal) eModal.remove();
+
+    this.element = null;
+    this.campaignModalElement = null;
+    this.editContactModalElement = null;
+  }
+
+  // --- Métodos para o Modal de Criação de Campanha ---
+
+  _createCampaignModalIfNeeded() {
+    if (!document.getElementById("campaignModal")) {
+      const modalOverlay = document.createElement("div");
+      modalOverlay.id = "campaignModal";
+      modalOverlay.className = "modal-overlay campaign-modal-overlay"; 
+      modalOverlay.innerHTML = `
+        <div class="modal campaign-creation-modal">
+          <div class="modal-header">
+            <h2 class="modal-title" id="campaignModalTitle">Criar Campanha</h2>
+            <button class="modal-close" id="campaignModalCloseBtn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body" id="campaignModalBodyContent"></div>
+          <div class="modal-footer" id="campaignModalFooterContent"></div>
+        </div>`; // Corrigido aqui
+      document.body.appendChild(modalOverlay);
+      this.campaignModalElement = modalOverlay;
+
+      this.campaignModalElement.querySelector("#campaignModalCloseBtn").addEventListener("click", () => this._closeCampaignModal(true));
+      this.campaignModalElement.addEventListener("click", (e) => {
+        if (e.target === this.campaignModalElement) this._closeCampaignModal(true);
+      });
+    }
+  }
+
+  _closeCampaignModal(force = false) {
+    if (!this.campaignModalElement) return;
+  
+    // Se estamos no passo 2 (resultados) e não for fechamento forçado, volta ao passo 1
+    if (!force && this.campaignModalStep === 2) {
+      this.campaignModalStep = 1;
+      this.csvFile = null;
+      this.allProcessedContacts = [];
+      this._renderCampaignModalStep1();
+      return;
+    }
+  
+    // Fecha de fato o modal
+    this.campaignModalElement.classList.remove("active");
+    document.body.style.overflow = "";
+  
+    // Opcional: reset total do estado para garantir que, ao reabrir, tudo comece do zero
+    this.campaignModalStep = 1;
+    this.csvFile = null;
+    this.allProcessedContacts = [];
+  }
+
+  _handleOpenCampaignModal() {
+    if (!this.selectedQuestionnaire) return;
+    this._closeQuestionnaireViewModal(); 
+    this.campaignModalStep = 1;
+    this.allProcessedContacts = []; 
+    this.csvFile = null; 
+    this._renderCampaignModalStep1();
+    if(this.campaignModalElement) this.campaignModalElement.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  _renderCampaignModalStep1() {
+    const bodyContent = this.campaignModalElement.querySelector("#campaignModalBodyContent");
+    const footerContent = this.campaignModalElement.querySelector("#campaignModalFooterContent");
+
+    bodyContent.innerHTML = `
+      <div class="campaign-questionnaire-preview">
+        <h4>Questionário Selecionado:</h4>
+        <div class="questionnaire-card mini">
+          <div class="questionnaire-color-bar" style="background-color: ${this.selectedQuestionnaire.color};"></div>
+          <div class="card-header"><div class="card-content"><h3 class="card-title">${this.selectedQuestionnaire.title}</h3></div></div>
+        </div>
+      </div>
+      <div class="file-upload-area">
+        <label for="csvFileInput" class="file-upload-label">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <span>Selecione ou arraste o arquivo CSV</span>
+          <small>Colunas esperadas: nome, email, telefone</small>
+        </label>
+        <input type="file" id="csvFileInput" accept=".csv" class="file-input" />
+        <span id="csvFileName" class="csv-file-name">Nenhum arquivo selecionado</span>
+      </div>
+    `;
+
+    footerContent.innerHTML = `
+      <button class="modal-button modal-button-secondary" id="campaignModalBackToViewBtn">Voltar à Biblioteca</button>
+      <button class="modal-button modal-button-primary" id="campaignModalVerifyCsvBtn">Verificar CSV</button>
+    `;
+
+    const csvInput = this.campaignModalElement.querySelector("#csvFileInput");
+    if (csvInput) csvInput.value = ""; 
+
+    csvInput.addEventListener("change", (e) => {
+      this.csvFile = e.target.files[0];
+      document.getElementById("csvFileName").textContent = this.csvFile ? this.csvFile.name : "Nenhum arquivo selecionado";
+    });
+    this.campaignModalElement.querySelector("#campaignModalBackToViewBtn").addEventListener("click", () => this._closeCampaignModal(true));
+    this.campaignModalElement.querySelector("#campaignModalVerifyCsvBtn").addEventListener("click", () => this._handleVerifyCsv());
+  }
+  
+  _handleVerifyCsv() {
+    if (!this.csvFile) {
+      showNotification("Por favor, selecione um arquivo CSV.", "error");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const csvText = event.target.result;
+      this._processCsv(csvText); 
+      this.campaignModalStep = 2;
+      this._renderCampaignResultsView(); 
+    };
+    reader.onerror = () => showNotification("Erro ao ler o arquivo.", "error");
+    reader.readAsText(this.csvFile);
+  }
+  
+  _validateCsvName(name) {
+    if (!name || typeof name !== 'string') return false;
+    const trimmedName = name.trim();
+    return trimmedName.length >= 2 && /^[a-zA-ZÀ-ÿ\s'-]+$/.test(trimmedName);
+  }
+
+  _validateCsvEmail(email) {
+    if (!email || typeof email !== 'string') return false;
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+    return emailRegex.test(email.trim());
+  }
+
+  _validateCsvPhoneNumber(phone) {
+    if (!phone || typeof phone !== 'string') return false;
+    const withSpaces = phone.replace(/[-()]/g, ' ');
+    const digitsOnly = withSpaces.replace(/\s+/g, '');
+    const regex = /^(?:\d{8}|\d{9}|\d{10}|\d{11})$/;
+    return regex.test(digitsOnly);
+  }
+  _processCsv(csvText) {
+    this.allProcessedContacts = []; 
+    const lines = csvText.split(/\r\n|\n/);
+    if (lines.length < 2) {
+      showNotification("CSV vazio ou sem dados.", "error"); return;
+    }
+    const headerLine = lines[0].toLowerCase().trim();
+    const headers = headerLine.split(',').map(h => h.trim());
+    const nameIndex = headers.indexOf("nome");
+    const emailIndex = headers.indexOf("email");
+    const phoneIndex = headers.indexOf("telefone");
+
+    if (nameIndex === -1 || emailIndex === -1 || phoneIndex === -1) {
+      showNotification("Cabeçalho do CSV inválido. Esperado: nome, email, telefone.", "error");
+      this.campaignModalStep = 1; this._renderCampaignModalStep1(); return;
+    }
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const values = line.split(',');
+      const contactData = {
+        id: this.generateSimpleUniqueId(), 
+        nome: values[nameIndex] ? values[nameIndex].trim() : '',
+        email: values[emailIndex] ? values[emailIndex].trim() : '',
+        telefone: values[phoneIndex] ? values[phoneIndex].trim() : '',
+      };
+      this._validateContactData(contactData);
+      this.allProcessedContacts.push(contactData);
+    }
+  }
+
+  _renderCampaignResultsView() {
+    const bodyContent = this.campaignModalElement.querySelector("#campaignModalBodyContent");
+    const footerContent = this.campaignModalElement.querySelector("#campaignModalFooterContent");
+
+    const validContacts = this.allProcessedContacts.filter(c => c.isValid);
+    const invalidContacts = this.allProcessedContacts.filter(c => !c.isValid);
+
+    bodyContent.innerHTML = `
+      <div class="csv-results-summary">
+        <h4>Resultados da Verificação:</h4>
+        <div class="summary-item valid">
+          <i class="fas fa-check-circle"></i><span class="count">${validContacts.length}</span><span>Contatos Válidos</span>
+        </div>
+        <div class="summary-item invalid">
+          <i class="fas fa-times-circle"></i><span class="count">${invalidContacts.length}</span><span>Contatos Inválidos</span>
+        </div>
+      </div>
+      <div class="contacts-list-container">
+        ${this._renderContactListSection("Contatos Válidos", validContacts, true)}
+        ${this._renderContactListSection("Contatos Inválidos", invalidContacts, false)}
+      </div>
+    `;
+
+    footerContent.innerHTML = `
+      <button class="modal-button modal-button-secondary" id="campaignModalBackToUploadBtn">Voltar ao Upload</button>
+      ${invalidContacts.length > 0 ? `<button class="modal-button modal-button-neutral" id="campaignModalDownloadInvalidBtn">Contatos Inválidos</button>` : ''}
+      <button class="modal-button modal-button-primary" id="campaignModalCreateFinalBtn" ${validContacts.length === 0 ? 'disabled' : ''}>Criar Campanha</button>
+    `;
+
+    this._addResultsViewEventListeners();
+  }
+
+  _renderContactListSection(title, contacts, isValidList) {
+    if (contacts.length === 0 && isValidList) return `<section class="contact-list-section"><h5 class="contact-list-title">${title} (0)</h5><p class="no-contacts-message">Nenhum contato válido.</p></section>`;
+    if (contacts.length === 0 && !isValidList) return ''; 
+
+    const contactsHtml = contacts.map(contact => `
+      <div class="contact-item" data-contact-id="${contact.id}">
+        <div class="contact-info">
+          <span class="contact-name">${contact.nome || '(Sem nome)'}</span>
+          <span class="contact-detail">${contact.email || '(Sem email)'}</span>
+          <span class="contact-detail">${contact.telefone || '(Sem telefone)'}</span>
+          ${!contact.isValid ? `<span class="contact-invalid-reason">Motivo: ${contact.motivoInvalidez.join(', ')}</span>` : ''}
+        </div>
+        <div class="contact-actions">
+          <button class="contact-action-btn edit-contact-btn" title="Editar">
+            <i class="fas fa-pencil-alt"></i>
+          </button>
+          <button class="contact-action-btn delete-contact-btn" title="Excluir">
+             <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    `).join('');
+    // Alteração: Botão de excluir agora é renderizado para todos os contatos (válidos e inválidos)
+    // Se quiser apenas para válidos, use a lógica anterior:
+    // ${isValidList ? `<button class="contact-action-btn delete-contact-btn" ...><i class="fas fa-times"></i></button>` : ''}
+
+
+    return `
+      <section class="contact-list-section">
+        <h5 class="contact-list-title">${title} (${contacts.length})</h5>
+        <div class="contact-items-wrapper">${contactsHtml}</div>
+      </section>
+    `;
+  }
+
+  _addResultsViewEventListeners() {
+    this.campaignModalElement.querySelector("#campaignModalBackToUploadBtn").addEventListener("click", () => {
+      this.campaignModalStep = 1; this.csvFile = null; this.allProcessedContacts = [];
+      this._renderCampaignModalStep1();
+    });
+
+    const downloadBtn = this.campaignModalElement.querySelector("#campaignModalDownloadInvalidBtn");
+    if (downloadBtn) {
+      downloadBtn.addEventListener("click", () => this._downloadInvalidContacts());
+    }
+    this.campaignModalElement.querySelector("#campaignModalCreateFinalBtn").addEventListener("click", () => this._handleCreateCampaignFinal());
+
+    const contactsListContainer = this.campaignModalElement.querySelector('.contacts-list-container');
+    if (contactsListContainer) {
+        contactsListContainer.addEventListener('click', (e) => {
+            const contactItem = e.target.closest('.contact-item');
+            if (!contactItem) return;
+            
+            const contactId = contactItem.dataset.contactId;
+
+            if (e.target.closest('.edit-contact-btn')) {
+                this._handleEditContact(contactId);
+            } else if (e.target.closest('.delete-contact-btn')) {
+                this._handleDeleteContact(contactId);
+            }
+        });
+    }
+  }
+  
+  _handleDeleteContact(contactId) {
+    this.allProcessedContacts = this.allProcessedContacts.filter(c => c.id !== contactId);
+    this._renderCampaignResultsView(); 
+  }
+
+  _downloadInvalidContacts() {
+    const invalidContacts = this.allProcessedContacts.filter(c => !c.isValid);
+    if (invalidContacts.length === 0) return;
+    let csvContent = "nome,email,telefone,motivo_invalidez\n";
+    invalidContacts.forEach(c => {
+      const motivo = `"${c.motivoInvalidez.join('; ')}"`;
+      csvContent += `${c.nome || ''},${c.email || ''},${c.telefone || ''},${motivo}\n`;
+    });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "contatos_invalidos.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+  }
+
+
+
+async _handleCreateCampaignFinal() {
+  try {
+    const validContactsPayload = this.allProcessedContacts
+      .filter(c => c.isValid)
+      .map(({ nome, email, telefone }) => ({ 
+        name: nome, 
+        email, 
+        phone: telefone 
+      }));
+
+    if (validContactsPayload.length === 0) {
+      showNotification("É necessário ter pelo menos um contato válido.", "error");
+      return;
+    }
+    
+    // Preparar payload com os nomes de campos em inglês
+    const payload = {
+      questionnaireId: this.selectedQuestionnaire.id,
+      contacts: validContactsPayload
+    };
+
+    // Mostrar indicador de carregamento
+    const createBtn = this.campaignModalElement.querySelector("#campaignModalCreateFinalBtn");
+    const originalBtnText = createBtn.textContent;
+    createBtn.disabled = true;
+    createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+    
+    // Enviar para o backend
+    const response = await fetch('/api/campaigns', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload),
+      credentials: 'include'
+    });
+
+    // Restaurar botão
+    createBtn.disabled = false;
+    createBtn.textContent = originalBtnText;
+    console.log("Resposta do servidor:", response);
+    // Tratar resposta
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error);
+    }
+
+    const data = await response.json();
+    
+    showNotification(`Campanha criada com ${validContactsPayload.length} contatos.`, "success");
+    this._closeCampaignModal();
+    
+    // Redirecionar para a página de campanhas
+    setTimeout(() => {
+      window.history.pushState({}, '', `/dashboard/campaigns`);
+      window.dispatchEvent(new Event('popstate'));
+    }, 1500);
+    
+    return data;
+  } catch (error) {
+    console.error("Erro ao criar campanha:", error);
+    showNotification(
+      `Erro ao criar campanha: ${error.message || "Tente novamente mais tarde."}`, 
+      "error"
+    );
+  }
+}
+
+  // --- Métodos para o Modal de Edição de Contato ---
+  _createEditContactModalIfNeeded() {
+    if (!document.getElementById("editContactModal")) {
+        const modalOverlay = document.createElement("div");
+        modalOverlay.id = "editContactModal";
+        modalOverlay.className = "modal-overlay edit-contact-modal-overlay"; 
+        modalOverlay.innerHTML = `
+            <div class="modal edit-contact-modal">
+                <div class="modal-header">
+                    <h2 class="modal-title">Editar Contato</h2>
+                    <button class="modal-close" id="editContactModalCloseBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="editContactName">Nome</label>
+                        <input type="text" id="editContactName">
+                        <span class="input-error-msg" id="editContactNameError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="editContactEmail">Email</label>
+                        <input type="email" id="editContactEmail">
+                        <span class="input-error-msg" id="editContactEmailError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="editContactPhone">Telefone</label>
+                        <input type="tel" id="editContactPhone">
+                        <span class="input-error-msg" id="editContactPhoneError"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-button modal-button-secondary" id="editContactModalCancelBtn">Cancelar</button>
+                    <button class="modal-button modal-button-primary" id="editContactModalSaveBtn">Salvar</button>
+                </div>
+            </div>`; // Corrigido aqui
+        document.body.appendChild(modalOverlay);
+        this.editContactModalElement = modalOverlay;
+
+        modalOverlay.querySelector("#editContactModalCloseBtn").addEventListener("click", () => this._closeEditContactModal());
+        modalOverlay.querySelector("#editContactModalCancelBtn").addEventListener("click", () => this._closeEditContactModal());
+        modalOverlay.querySelector("#editContactModalSaveBtn").addEventListener("click", () => this._handleSaveEditedContact());
+        modalOverlay.addEventListener("click", (e) => {
+            if (e.target === modalOverlay) this._closeEditContactModal();
+        });
+    }
+  }
+
+  _handleEditContact(contactId) {
+    this.contactBeingEdited = this.allProcessedContacts.find(c => c.id === contactId);
+    if (!this.contactBeingEdited) return;
+
+    this.editContactModalElement.querySelector("#editContactName").value = this.contactBeingEdited.nome;
+    this.editContactModalElement.querySelector("#editContactEmail").value = this.contactBeingEdited.email;
+    this.editContactModalElement.querySelector("#editContactPhone").value = this.contactBeingEdited.telefone;
+
+    this.editContactModalElement.querySelectorAll('.input-error-msg').forEach(el => el.textContent = '');
+    this.editContactModalElement.querySelectorAll('input').forEach(el => el.classList.remove('input-error-border'));
+
+    if(this.editContactModalElement) this.editContactModalElement.classList.add("active");
+  }
+
+  _closeEditContactModal() {
+    if (this.editContactModalElement) {
+        this.editContactModalElement.classList.remove("active");
+    }
+    this.contactBeingEdited = null;
+  }
+
+  _handleSaveEditedContact() {
+    if (!this.contactBeingEdited) return;
+
+    const nameInput = this.editContactModalElement.querySelector("#editContactName");
+    const emailInput = this.editContactModalElement.querySelector("#editContactEmail");
+    const phoneInput = this.editContactModalElement.querySelector("#editContactPhone");
+
+    const nameErrorSpan = this.editContactModalElement.querySelector("#editContactNameError");
+    const emailErrorSpan = this.editContactModalElement.querySelector("#editContactEmailError");
+    const phoneErrorSpan = this.editContactModalElement.querySelector("#editContactPhoneError");
+
+    [nameInput, emailInput, phoneInput].forEach(el => el.classList.remove('input-error-border'));
+    [nameErrorSpan, emailErrorSpan, phoneErrorSpan].forEach(el => el.textContent = '');
+    
+    const nome = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const telefone = phoneInput.value.trim();
+    
+    const dataToValidate = { nome, email, telefone }; 
+    
+    this._validateContactData(dataToValidate);
+
+    if (!dataToValidate.isValid) {
+        dataToValidate.motivoInvalidez.forEach(reason => {
+            if (reason.toLowerCase().includes("nome")) {
+                nameInput.classList.add('input-error-border');
+                nameErrorSpan.textContent = reason;
+            } else if (reason.toLowerCase().includes("email")) {
+                emailInput.classList.add('input-error-border');
+                emailErrorSpan.textContent = reason;
+            } else if (reason.toLowerCase().includes("telefone")) {
+                phoneInput.classList.add('input-error-border');
+                phoneErrorSpan.textContent = reason;
+            }
+        });
+        showNotification("Dados inválidos! Verifique os campos e tente novamente.", "error");
+        return; 
+    }
+    
+    const contactIndex = this.allProcessedContacts.findIndex(c => c.id === this.contactBeingEdited.id);
+    if (contactIndex > -1) {
+        this.allProcessedContacts[contactIndex].nome = nome; 
+        this.allProcessedContacts[contactIndex].email = email;
+        this.allProcessedContacts[contactIndex].telefone = telefone;
+        this.allProcessedContacts[contactIndex].isValid = true; 
+        this.allProcessedContacts[contactIndex].motivoInvalidez = []; 
+    }
+    
+    this._closeEditContactModal();
+    this._renderCampaignResultsView(); 
+    showNotification("Contato atualizado com sucesso!", "success");
   }
 }
