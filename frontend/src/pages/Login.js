@@ -49,6 +49,7 @@ class Login {
         const { ok, data } = await loginApi({ email, password });
         if (ok) {
           showNotification("Login realizado com sucesso!", "success");
+          localStorage.setItem("user", data.manager.name);
           window.history.pushState({}, '', '/dashboard');
           window.dispatchEvent(new Event('popstate'));
         } else {
