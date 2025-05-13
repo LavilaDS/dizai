@@ -1,5 +1,10 @@
 const authService = require('../services/authService');
 
+async function validateSession(req, res) {
+    res.sendStatus(200);
+  }
+  
+
 async function login(req, res, next) {
     try {
         const { email, password } = req.body;
@@ -20,4 +25,20 @@ async function login(req, res, next) {
     }
 }
 
-module.exports = { login };
+async function logout(req, res, next) {
+    try {
+      res.clearCookie('token', {
+        httpOnly: true,
+        sameSite: 'strict',
+      });
+      res.sendStatus(204); // No Content
+    } catch (err) {
+      next(err);
+    }
+  }
+
+module.exports = { 
+    login,
+    logout, 
+    validateSession
+};
