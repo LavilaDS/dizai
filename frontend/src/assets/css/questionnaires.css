@@ -36,9 +36,16 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   overflow: hidden;
-  transition: var(--transition-default);
+  transition: all 0.3s ease;
   cursor: pointer;
-  position: relative; /* Crucial para o posicionamento absoluto da barra */
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.questionnaire-card:hover {
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+  transform: translateY(-3px);
+  border-color: rgba(70, 73, 255, 0.2);
 }
 
 /* Nova classe unificada para a barra de cor */
@@ -135,6 +142,7 @@
   font-weight: 600;
   margin-bottom: var(--spacing-xs);
   color: var(--text-primary);
+  letter-spacing: -0.2px;
 }
 
 
@@ -249,11 +257,12 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15), 0 5px 15px rgba(0, 0, 0, 0.08);
   transform: translateY(20px);
   opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease;
 }
+
 
 .modal-overlay.active .modal {
   transform: translateY(0);
@@ -262,16 +271,18 @@
 
 .modal-header {
   padding: var(--spacing-lg);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: rgba(248, 249, 250, 0.5);
 }
 
 .modal-title {
   font-size: 20px;
   font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: -0.3px;
 }
 
 .modal-close {
@@ -289,8 +300,9 @@
 }
 
 .modal-close:hover {
-  background-color: var(--background-secondary);
+  background-color: rgba(0,0,0,0.05);
   color: var(--text-primary);
+  transform: rotate(90deg);
 }
 
 .modal-body {
@@ -564,23 +576,39 @@
   gap: var(--spacing-md);
 }
 
+.modal-button-neutral {
+  background-color: rgb(8, 151, 118);
+  color: white;
+  border: none;
+  box-shadow: 0 2px 4px rgba(4, 144, 78, 0.2);
+}
+
 .modal-button {
-  padding: 8px 16px;
+  padding: 10px 18px;
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: var(--transition-default);
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
 }
 
 .modal-button-primary {
   background-color: var(--primary-color);
   color: white;
   border: none;
+  box-shadow: 0 2px 4px rgba(70, 73, 255, 0.2);
 }
 
 .modal-button-primary:hover {
   background-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(70, 73, 255, 0.3);
+}
+
+.modal-button-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(70, 73, 255, 0.3);
 }
 
 .modal-button-secondary {
@@ -591,6 +619,43 @@
 
 .modal-button-secondary:hover {
   background-color: var(--background-secondary);
+  border-color: #d1d1d1;
+}
+
+/* Resumo de verificação de contatos */
+.csv-results-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background-color: #f9f9fb;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+}
+
+.summary-item.valid {
+  background-color: rgba(58, 192, 160, 0.1);
+  color: #2a9d8f;
+}
+
+.summary-item.invalid {
+  background-color: rgba(211, 47, 47, 0.1);
+  color: #d32f2f;
+}
+
+.summary-item .count {
+  font-size: 18px;
+  font-weight: 600;
+  margin-right: 4px;
 }
 
 /* Campaign Form */
@@ -692,4 +757,712 @@
   .binary-options-container {
     flex-direction: column;
   }
+}
+
+.contacts-list-container {
+  margin-top: var(--spacing-lg);
+  max-height: 40vh;
+  overflow-y: auto;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  background-color: #fdfdfd;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.02);
+}
+
+.contact-list-section {
+  margin-bottom: var(--spacing-lg);
+}
+.contact-list-section:last-child {
+  margin-bottom: 0;
+}
+
+.contact-list-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+}
+
+.contact-list-title::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  margin-right: 8px;
+}
+
+.no-contacts-message {
+    font-style: italic;
+    color: var(--text-tertiary);
+    padding: var(--spacing-md) 0;
+}
+
+.contact-items-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--background-primary);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  margin-bottom: 6px;
+}
+
+.contact-item:hover {
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+  border-color: rgba(70, 73, 255, 0.15);
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  flex-grow: 1;
+  margin-right: var(--spacing-md);
+}
+
+.contact-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.contact-detail {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.contact-invalid-reason {
+  font-size: 0.8rem;
+  color: #d32f2f; /* Vermelho para erros */
+  font-style: italic;
+}
+
+.contact-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.contact-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  color: var(--text-tertiary);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-default), color var(--transition-default);
+}
+
+.contact-action-btn:hover {
+  background-color: var(--light-bg);
+}
+
+.contact-action-btn.edit-contact-btn:hover {
+  color: var(--primary-color);
+  background-color: rgba(70, 73, 255, 0.1);
+}
+.contact-action-btn.delete-contact-btn:hover {
+  color: #d32f2f;
+  background-color: rgba(211, 47, 47, 0.1);
+}
+
+.contact-action-btn i {
+  font-size: 0.9rem;
+}
+
+
+/* Estilos para o Modal de Edição de Contato */
+.campaign-modal-overlay { /* Modal de upload/resultados */
+    z-index: 1100; /* Padrão */
+}
+.edit-contact-modal-overlay { /* Modal de edição de contato */
+    z-index: 1150; /* Deve estar acima do modal de campanha */
+}
+
+/* Modal de edição de contato */
+.edit-contact-modal {
+  max-width: 450px;
+  border-radius: var(--radius-lg);
+}
+
+.edit-contact-modal .modal-body .form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.edit-contact-modal .modal-body label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.edit-contact-modal .modal-body input[type="text"],
+.edit-contact-modal .modal-body input[type="email"],
+.edit-contact-modal .modal-body input[type="tel"] {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+}
+
+.edit-contact-modal .modal-body input.input-error-border {
+  border-color: #d32f2f !important;
+  box-shadow: 0 0 0 1px #d32f2f30;
+}
+
+.edit-contact-modal .input-error-msg {
+  display: block;
+  font-size: 0.8rem;
+  color: #d32f2f;
+  margin-top: var(--spacing-xs);
+  min-height: 1em; /* Para evitar que o layout pule */
+}
+
+.modal-overlay.edit-contact-modal-overlay {
+  z-index: 1150; /* Garante que fique sobre outros modais */
+}
+
+.modal.edit-contact-modal {
+  max-width: 450px; /* Um pouco menor para edição focada */
+}
+
+.modal.edit-contact-modal .modal-body .form-group {
+  margin-bottom: var(--spacing-lg);
+  position: relative;
+}
+
+.modal.edit-contact-modal .modal-body label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+  display: block; /* Garante que o label fique acima do input */
+}
+
+.modal.edit-contact-modal .modal-body input:focus + label {
+  color: var(--primary-color);
+}
+
+.modal.edit-contact-modal .modal-body input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.modal.edit-contact-modal .modal-body input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(70, 73, 255, 0.1);
+  outline: none;
+}
+
+.modal.edit-contact-modal .modal-body {
+  padding: var(--spacing-xl);
+}
+
+.modal.edit-contact-modal .modal-body input[type="text"],
+.modal.edit-contact-modal .modal-body input[type="email"],
+.modal.edit-contact-modal .modal-body input[type="tel"] {
+  width: 100%;
+  padding: var(--spacing-sm); /* Padding consistente */
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  box-sizing: border-box; /* Importante para o padding não aumentar a largura total */
+}
+
+.modal.edit-contact-modal .modal-body input.input-error-border { /* Já definido, apenas para referência */
+  border-color: #d32f2f !important;
+  box-shadow: 0 0 0 1px #d32f2f30;
+}
+
+/* CSS para as mensagens de erro dos inputs no modal de edição */
+.input-error-msg {
+  display: block; /* Para que ocupe sua própria linha */
+  font-size: 0.8rem;
+  color: #d32f2f; /* Cor vermelha para erro */
+  margin-top: var(--spacing-xs);
+  min-height: 1em; /* Para evitar que o layout "pule" quando a mensagem aparece/desaparece */
+}
+
+/* Estilos para área de upload de arquivo */
+.file-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: var(--spacing-lg) 0;
+  width: 100%;
+}
+
+.file-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 180px;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: rgba(248, 249, 250, 0.7);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: var(--spacing-lg);
+  text-align: center;
+}
+
+.file-upload-label:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(70, 73, 255, 0.03);
+}
+
+.file-upload-label i {
+  font-size: 42px;
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-md);
+}
+
+.file-upload-label span {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.file-upload-label small {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
+}
+
+.file-input {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.csv-file-name {
+  margin-top: var(--spacing-md);
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--background-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+/* Estilo para quando um arquivo é selecionado */
+input:valid + .csv-file-name {
+  color: var(--primary-color);
+  border-color: var(--primary-light);
+  background-color: rgba(70, 73, 255, 0.05);
+}
+
+/* Suporte para drag & drop */
+.file-upload-label.drag-over {
+  border-color: var(--primary-color);
+  background-color: rgba(70, 73, 255, 0.08);
+  transform: scale(1.01);
+}
+
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6); /* Um pouco mais escuro para foco */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050; /* Base z-index para overlays */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  padding: var(--spacing-md); /* Espaçamento para o modal não colar nas bordas da tela */
+  box-sizing: border-box;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal {
+  background-color: var(--background-primary);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 800px; /* Para o modal de visualização de questionário */
+  max-height: 90vh; /* Altura máxima */
+  overflow: hidden; /* O scroll interno será no modal-body */
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  transform: scale(0.95) translateY(10px); /* Animação de entrada sutil */
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease-out;
+}
+
+.modal-overlay.active .modal {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.modal-header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0; /* Não encolher */
+}
+
+.modal-title {
+  font-size: 1.25rem; /* Ajustado */
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  width: 36px; /* Área de toque maior */
+  height: 36px; /* Área de toque maior */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: var(--transition-default);
+}
+.modal-close svg { stroke-width: 2.5; } /* Linhas do X mais grossas */
+.modal-close:hover {
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: var(--spacing-lg);
+  overflow-y: auto; /* Scroll apenas no corpo */
+  flex-grow: 1; /* O corpo do modal cresce para preencher o espaço */
+  -webkit-overflow-scrolling: touch; /* Scroll suave em iOS */
+}
+
+.modal-footer {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  flex-shrink: 0; /* Não encolher */
+  background-color: var(--background-secondary); /* Fundo sutil para o footer */
+}
+
+.modal-button {
+  padding: 10px 18px; /* Ajustado para melhor toque */
+  border-radius: var(--radius-md); /* Borda um pouco mais arredondada */
+  font-size: 0.9rem; /* Levemente ajustado */
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-default);
+  border: 1px solid transparent; /* Base para botões secundários */
+  line-height: 1.5;
+}
+.modal-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-button-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+.modal-button-primary:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.modal-button-secondary {
+  background-color: var(--background-primary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+.modal-button-secondary:hover:not(:disabled) {
+  background-color: var(--background-secondary);
+  border-color: #ccc; /* Borda um pouco mais escura no hover */
+}
+
+.modal-button-neutral {
+  background-color: var(--tag-bg); /* Usando uma cor neutra das suas variáveis */
+  color: var(--tag-text);
+  border-color: var(--border-color);
+}
+.modal-button-neutral:hover:not(:disabled) {
+  background-color: #e0e0e0;
+}
+
+/* --- ESTILOS ESPECÍFICOS PARA MODAL DE CRIAÇÃO DE CAMPANHA --- */
+.modal.campaign-creation-modal {
+  max-width: 700px; /* Um pouco menor que o de visualização para focar na tarefa */
+}
+
+.campaign-modal-overlay {
+    z-index: 1100;
+}
+
+.campaign-creation-modal .modal-body {
+  display: flex;
+  flex-direction: column;
+  /* O flex-grow: 1; já está no .modal-body genérico */
+}
+
+.campaign-questionnaire-preview {
+  margin-bottom: var(--spacing-lg);
+  flex-shrink: 0; /* Não encolher */
+}
+.campaign-questionnaire-preview h4 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+.questionnaire-card.mini {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+.questionnaire-card.mini .card-header { padding: 0; } /* Simplificar header do mini card */
+.questionnaire-card.mini .card-title {
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+.file-upload-area {
+  margin-bottom: var(--spacing-lg);
+  flex-shrink: 0; /* Não encolher */
+}
+.file-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 150px; /* Altura mínima para área de toque */
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: rgba(248, 249, 250, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  padding: var(--spacing-lg);
+  text-align: center;
+}
+.file-upload-label:hover, .file-upload-label.drag-over {
+  border-color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+.file-upload-label i {
+  font-size: 2.5rem; /* Maior para destaque */
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-sm);
+}
+.file-upload-label span { font-weight: 500; color: var(--text-primary); }
+.file-upload-label small { font-size: 0.85rem; color: var(--text-secondary); margin-top: var(--spacing-xs); }
+.file-input { display: none; }
+.csv-file-name {
+  display: block;
+  margin-top: var(--spacing-sm);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-align: center;
+  word-break: break-all;
+}
+
+/* Resultados do CSV */
+.csv-results-summary {
+  display: flex;
+  flex-wrap: wrap; /* Para quebrar em telas menores */
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--background-secondary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  flex-shrink: 0;
+}
+.csv-results-summary h4 {
+  width: 100%; /* Ocupar toda a largura */
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  text-align: left; /* Alinhado à esquerda para consistência */
+}
+.summary-item {
+  flex: 1; /* Tenta distribuir espaço igualmente */
+  min-width: 150px; /* Largura mínima antes de quebrar */
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+.summary-item i { font-size: 1.1rem; margin-right: var(--spacing-sm); }
+.summary-item .count { font-size: 1.4rem; font-weight: 700; margin-right: var(--spacing-xxs); }
+.summary-item.valid { background-color: rgba(56, 176, 0, 0.1); color: #2a7e19; }
+.summary-item.valid i { color: #38b000; }
+.summary-item.invalid { background-color: rgba(239, 35, 60, 0.1); color: #b3001b; }
+.summary-item.invalid i { color: #ef233c; }
+
+/* Container das listas de contatos */
+.contacts-list-container {
+  flex-grow: 1; /* FAZ ESTE CONTAINER CRESCER */
+  min-height: 250px; /* ALTURA MÍNIMA, ajuste conforme necessário */
+  /* Ou use vh: min-height: 35vh; */
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: #fff; /* Fundo branco para destacar dos outros elementos do modal */
+}
+.contact-list-section { margin-bottom: var(--spacing-lg); }
+.contact-list-section:last-child { margin-bottom: 0; }
+.contact-list-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+.no-contacts-message { font-style: italic; color: var(--text-tertiary); padding: var(--spacing-md) 0; }
+.contact-items-wrapper { display: flex; flex-direction: column; gap: var(--spacing-xxs); } /* Gap menor entre itens */
+
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md); /* Padding ajustado */
+  background-color: var(--background-primary);
+  border: 1px solid transparent; /* Borda transparente para manter o espaço no hover */
+  border-bottom: 1px solid var(--border-color); /* Apenas borda inferior para listas longas */
+  border-radius: var(--radius-sm);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.contact-item:last-child { border-bottom: none; }
+.contact-item:hover { background-color: var(--primary-light); border-color: rgba(70,73,255,0.2); }
+
+.contact-info { display: flex; flex-direction: column; gap: 2px; flex-grow: 1; margin-right: var(--spacing-sm); overflow: hidden; /* Evitar quebra de layout com texto longo */ }
+.contact-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contact-detail { font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contact-invalid-reason { font-size: 0.75rem; color: #d32f2f; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+.contact-actions { display: flex; gap: var(--spacing-xs); flex-shrink: 0; /* Não encolher botões */ }
+.contact-action-btn {
+  background: none; border: none; cursor: pointer; padding: 6px; /* Área de toque */
+  color: var(--text-tertiary); border-radius: 50%; width: 30px; height: 30px; /* Tamanho consistente */
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
+}
+.contact-action-btn:hover { background-color: rgba(0,0,0,0.05); }
+.contact-action-btn.edit-contact-btn:hover { color: var(--primary-color); }
+.contact-action-btn.delete-contact-btn:hover { color: #d32f2f; }
+.contact-action-btn i { font-size: 0.9rem; }
+
+/* --- ESTILOS ESPECÍFICOS PARA MODAL DE EDIÇÃO DE CONTATO --- */
+.edit-contact-modal-overlay { z-index: 1150; } /* Acima do modal de campanha */
+.modal.edit-contact-modal { max-width: 480px; /* Tamanho adequado para formulário */ }
+.modal.edit-contact-modal .modal-body .form-group { margin-bottom: var(--spacing-lg); }
+.modal.edit-contact-modal .modal-body label {
+  font-weight: 500; font-size: 0.9rem; margin-bottom: var(--spacing-xs); display: block;
+}
+.modal.edit-contact-modal .modal-body input[type="text"],
+.modal.edit-contact-modal .modal-body input[type="email"],
+.modal.edit-contact-modal .modal-body input[type="tel"] {
+  width: 100%; padding: 10px; border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm); font-size: 1rem; box-sizing: border-box;
+}
+.modal.edit-contact-modal .modal-body input:focus {
+  border-color: var(--primary-color); box-shadow: 0 0 0 2px var(--primary-light); outline: none;
+}
+.modal.edit-contact-modal .modal-body input.input-error-border {
+  border-color: #d32f2f !important; box-shadow: 0 0 0 2px rgba(211,47,47,0.1) !important;
+}
+.input-error-msg {
+  display: block; font-size: 0.8rem; color: #d32f2f;
+  margin-top: var(--spacing-xs); min-height: 1.2em; /* Evita pulo de layout */
+}
+
+
+/* --- MEDIA QUERIES PARA RESPONSIVIDADE DOS MODAIS --- */
+
+@media screen and (max-width: 768px) {
+  .modal {
+    width: 95%;
+    max-height: 95vh; /* Aumentar um pouco para mobile */
+  }
+  .modal-title { font-size: 1.1rem; }
+  .modal-body { padding: var(--spacing-md); }
+  .modal-footer { padding: var(--spacing-md); flex-wrap: wrap; /* Botões podem quebrar linha */ }
+  .modal-button { width: 100%; margin-bottom: var(--spacing-sm); } /* Botões full-width */
+  .modal-footer button:last-child { margin-bottom: 0; }
+
+  .csv-results-summary { flex-direction: column; align-items: stretch; gap: var(--spacing-sm); }
+  .summary-item { min-width: 0; /* Remove largura mínima para caber melhor */ }
+
+  .contacts-list-container {
+    min-height: 200px; /* Reduzir altura mínima em mobile */
+    max-height: 50vh; /* Ajustar max-height também */
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .modal-title { font-size: 1rem; }
+  .modal-footer { gap: var(--spacing-sm); }
+  .modal-button { padding: 10px 15px; font-size: 0.85rem; }
+
+  .file-upload-label i { font-size: 2rem; }
+  .file-upload-label span { font-size: 0.9rem; }
+  .file-upload-label small { font-size: 0.75rem; }
+
+  .csv-results-summary h4 { font-size: 1rem; }
+  .summary-item .count { font-size: 1.2rem; }
+  .summary-item span:not(.count) { font-size: 0.8rem; }
+
+  .contact-list-title { font-size: 0.9rem; }
+  .contact-item { padding: var(--spacing-sm); flex-wrap: wrap; /* Permite que ações quebrem linha */ }
+  .contact-info { margin-right: 0; margin-bottom: var(--spacing-sm); /* Espaço se ações quebrarem */ }
+  .contact-actions { width: 100%; justify-content: flex-end; /* Alinha botões à direita se quebrar */ }
+
+  .modal.edit-contact-modal { max-width: 100%; width: calc(100% - 2 * var(--spacing-md));}
+  .modal.edit-contact-modal .modal-body input { padding: 8px; font-size: 0.9rem; }  
+
 }
