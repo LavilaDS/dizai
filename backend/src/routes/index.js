@@ -10,7 +10,7 @@ const authMiddleware = require('../middleware/authMiddleware.js');
 
 router.use('/managers', managerRoutes);
 router.use('/auth', authRoutes);
-router.use('/questionnaires', questionnairesRoutes);
+router.use('/questionnaires', authMiddleware, questionnairesRoutes);
 router.use('/campaigns', authMiddleware, campaignRoutes);
 
 module.exports = router;
