@@ -1,3 +1,5 @@
+CREATE TYPE campaign_status_enum AS ENUM('ATIVA','CONCLUIDA');
+CREATE TYPE participant_status_enum AS ENUM('PENDENTE','ENVIADO','VISUALIZADO','RESPONDIDO');
 -- Gestores
 CREATE TABLE managers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -66,4 +68,29 @@ CREATE TABLE answer_options (
     question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
     text VARCHAR(255) NOT NULL,
     order_number INTEGER NOT NULL
+);
+
+-- Campanhas
+CREATE TABLE campaigns (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    manager_id UUID NOT NULL REFERENCES managers(id) ON DELETE CASCADE,
+    questionnaire_id UUID NOT NULL REFERENCES questionnaires(id) ON DELETE CASCADE,
+    quantity INTEGER NOT NULL,
+    status campaign_status_enum NOT NULL DEFAULT 'ATIVA',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    started_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Participantes
+CREATE TABLE participants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    token UUID NOT NULL,
+    status participant_status_enum NOT NULL DEFAULT 'PENDENTE',
+    sent_at TIMESTAMPTZ,
+    responded_at TIMESTAMPTZ,
+    UNIQUE(campaign_id, email)
 );
