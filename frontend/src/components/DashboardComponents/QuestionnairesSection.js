@@ -160,6 +160,7 @@ export default class QuestionnairesSection {
       const data = await response.json();
       this.questionnaires = data.map(q => ({ ...q, color: q.color || this._getRandomColor() }));
     } catch (error) {
+      this.error = error.message || "Erro ao carregar questionários";
       console.error("Erro ao carregar questionários:", error);
       showNotification("Erro ao carregar questionários.", "error");
     }
