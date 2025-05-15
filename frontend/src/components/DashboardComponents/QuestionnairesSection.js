@@ -1,5 +1,6 @@
 // frontend/src/components/DashboardComponents/QuestionnairesSection.js
 import { showNotification } from '../../utils/notification.js'; // Importar a função de notificação
+import { navigateTo } from '../../router.js';
 
 export default class QuestionnairesSection {
   constructor() {
@@ -21,6 +22,11 @@ export default class QuestionnairesSection {
     this.editContactModalElement = null;
     this.contactBeingEdited = null;
 
+
+    this.campaignFormData = {
+      name: '',
+      endDate: new Date().toISOString().split("T")[0]
+    };
 
     this.questionTypes = {
       MULTIPLE_CHOICE_SINGLE: "Múltipla Escolha (Única)",
@@ -49,11 +55,11 @@ export default class QuestionnairesSection {
   
   // Função auxiliar para validar um único contato (reutilizável)
   _validateContactData(contactData) {
-    contactData.motivoInvalidez = []; 
-    if (!this._validateCsvName(contactData.nome)) contactData.motivoInvalidez.push("Nome inválido");
-    if (!this._validateCsvEmail(contactData.email)) contactData.motivoInvalidez.push("Email inválido");
-    if (!this._validateCsvPhoneNumber(contactData.telefone)) contactData.motivoInvalidez.push("Telefone inválido");
-    contactData.isValid = contactData.motivoInvalidez.length === 0;
+    contactData.invalidReason = []; 
+    if (!this._validateCsvName(contactData.name)) contactData.invalidReason.push("Nome inválido");
+    if (!this._validateCsvEmail(contactData.email)) contactData.invalidReason.push("Email inválido");
+    if (!this._validateCsvPhoneNumber(contactData.phone)) contactData.invalidReason.push("Telefone inválido");
+    contactData.isValid = contactData.invalidReason.length === 0;
     return contactData.isValid; 
   }
 
@@ -69,16 +75,15 @@ export default class QuestionnairesSection {
           <p class="page-description">Selecione um questionário para visualizar suas perguntas e opções de resposta.</p>
         </header>
         <div class="questionnaire-list" id="questionnaireList">
-          ${this._getLoadingTemplate()}
         </div>
       </div>
     `;
-  
     this._createQuestionnaireViewModalIfNeeded();
     this._createCampaignModalIfNeeded(); 
     this._createEditContactModalIfNeeded(); 
   
     this.loading = true;
+    this._renderContent();
     try {
       await this._fetchQuestionnaires();
     } catch (error) {
@@ -92,7 +97,7 @@ export default class QuestionnairesSection {
     return this.element;
   }
 
-  _renderContent() {
+  async _renderContent() {
     const questionnaireList = this.element.querySelector("#questionnaireList");
     if (this.loading) {
       questionnaireList.innerHTML = this._getLoadingTemplate();
@@ -149,10 +154,16 @@ export default class QuestionnairesSection {
   }
 
   async _fetchQuestionnaires() {
-    const response = await fetch("/api/questionnaires", { credentials: "include" });
-    if (!response.ok) throw new Error(`Erro ${response.status}`);
-    const data = await response.json();
-    this.questionnaires = data.map(q => ({ ...q, color: q.color || this._getRandomColor() }));
+    try {
+      const response = await fetch("/api/questionnaires", { credentials: "include" });
+      if (!response.ok) throw new Error(`Erro ${response.status}`);
+      const data = await response.json();
+      this.questionnaires = data.map(q => ({ ...q, color: q.color || this._getRandomColor() }));
+    } catch (error) {
+      this.error = error.message || "Erro ao carregar questionários";
+      console.error("Erro ao carregar questionários:", error);
+      showNotification("Erro ao carregar questionários.", "error");
+    }
   }
 
   _renderList() {
@@ -209,6 +220,10 @@ export default class QuestionnairesSection {
       .map(tag => `<span class="modal-tag">${tag.name}</span>`).join("");
     modal.querySelector("#questionnaireViewModalQuestions").innerHTML = this._getLoadingTemplate("Carregando perguntas...");
     
+
+    const applyButton = modal.querySelector("#questionnaireViewModalCreateCampaignBtn");
+    applyButton.disabled = true;
+
     modal.classList.add("active");
     document.body.style.overflow = "hidden";
   }
@@ -225,11 +240,13 @@ export default class QuestionnairesSection {
 
   _updateQuestionnaireViewModalContent() {
     const modalQuestions = document.getElementById("questionnaireViewModalQuestions");
-    if (this.selectedQuestionnaireData && this.selectedQuestionnaireData.length > 0) {
+    const applyButton = document.getElementById("questionnaireViewModalCreateCampaignBtn");    if (this.selectedQuestionnaireData && this.selectedQuestionnaireData.length > 0) {
       modalQuestions.innerHTML = this.selectedQuestionnaireData
         .sort((a,b) => a.order_number - b.order_number)
         .map((q, i) => this._renderQuestionTemplate(q, i)).join("");
+      applyButton.disabled = false;
     } else {
+      applyButton.disabled = true;
       modalQuestions.innerHTML = `<p>Este questionário não possui perguntas.</p>`;
     }
   }
@@ -340,8 +357,11 @@ export default class QuestionnairesSection {
     this.campaignModalStep = 1;
     this.csvFile = null;
     this.allProcessedContacts = [];
+    this.campaignFormData = {
+      name: '',
+      endDate: ''
+    };
   }
-
   _handleOpenCampaignModal() {
     if (!this.selectedQuestionnaire) return;
     this._closeQuestionnaireViewModal(); 
@@ -352,12 +372,42 @@ export default class QuestionnairesSection {
     if(this.campaignModalElement) this.campaignModalElement.classList.add("active");
     document.body.style.overflow = "hidden";
   }
-
   _renderCampaignModalStep1() {
     const bodyContent = this.campaignModalElement.querySelector("#campaignModalBodyContent");
     const footerContent = this.campaignModalElement.querySelector("#campaignModalFooterContent");
-
+  
+    const today = new Date().toISOString().split('T')[0];
+  
+    const formattedEndDate = this.campaignFormData.endDate
+      ? new Date(this.campaignFormData.endDate + "T00:00:00").toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : "DD/MM/AAAA";
+  
     bodyContent.innerHTML = `
+      <div class="campaign-form-section">
+        <div class="campaign-form-group">
+          <label for="campaignName" class="form-label">
+            <i class="fas fa-tag"></i> Nome da Campanha
+          </label>
+          <input type="text" id="campaignName" class="form-input" 
+                 value="${this.campaignFormData.name}"                  
+                 placeholder="Exemplo: Digite o nome da campanha" required>
+          <span class="form-error" id="campaignNameError"></span>
+        </div>
+        
+        <div class="campaign-form-group">
+          <label for="campaignEndDate" class="form-label">
+            <i class="fas fa-calendar-alt"></i> Data de Encerramento
+          </label>
+          <input type="date" id="campaignEndDate" class="form-input" 
+                 value="${this.campaignFormData.endDate}" 
+                 min="${today}" required>
+          <span class="form-error" id="campaignEndDateError"></span>
+          <small class="form-helper" id="campaignEndDateHelper">
+            O questionário estará aberto até ${formattedEndDate} às 23h59. Após esse horário, será encerrado.
+          </small>
+        </div>
+      </div>
+  
       <div class="campaign-questionnaire-preview">
         <h4>Questionário Selecionado:</h4>
         <div class="questionnaire-card mini">
@@ -375,28 +425,111 @@ export default class QuestionnairesSection {
         <span id="csvFileName" class="csv-file-name">Nenhum arquivo selecionado</span>
       </div>
     `;
-
+  
     footerContent.innerHTML = `
       <button class="modal-button modal-button-secondary" id="campaignModalBackToViewBtn">Voltar à Biblioteca</button>
       <button class="modal-button modal-button-primary" id="campaignModalVerifyCsvBtn">Verificar CSV</button>
     `;
-
+  
+    // Adicionar ouvinte de eventos para atualizar o texto dinamicamente
+    const campaignEndDateInput = this.campaignModalElement.querySelector("#campaignEndDate");
+    const campaignEndDateHelper = this.campaignModalElement.querySelector("#campaignEndDateHelper");
+  
+    campaignEndDateInput.addEventListener("change", (e) => {
+      const selectedDate = e.target.value;
+      if (selectedDate) {
+        const formattedDate = new Date(selectedDate + "T00:00:00").toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        campaignEndDateHelper.textContent = `O questionário estará aberto até ${formattedDate} às 23h59. Após esse horário, será encerrado.`;
+      } else {
+        campaignEndDateHelper.textContent = "Selecione uma data válida.";
+      }
+    });
+  
     const csvInput = this.campaignModalElement.querySelector("#csvFileInput");
     if (csvInput) csvInput.value = ""; 
-
+  
     csvInput.addEventListener("change", (e) => {
       this.csvFile = e.target.files[0];
       document.getElementById("csvFileName").textContent = this.csvFile ? this.csvFile.name : "Nenhum arquivo selecionado";
     });
     this.campaignModalElement.querySelector("#campaignModalBackToViewBtn").addEventListener("click", () => this._closeCampaignModal(true));
-    this.campaignModalElement.querySelector("#campaignModalVerifyCsvBtn").addEventListener("click", () => this._handleVerifyCsv());
+    this.campaignModalElement.querySelector("#campaignModalVerifyCsvBtn").addEventListener("click", () => this._validateAndProceedWithCsv());
   }
-  
-  _handleVerifyCsv() {
+  // Função para validar o formulário da campanha
+  _validateCampaignForm() {
+    let isValid = true;
+    const campaignName = this.campaignModalElement.querySelector("#campaignName");
+    const campaignEndDate = this.campaignModalElement.querySelector("#campaignEndDate");
+    const nameError = this.campaignModalElement.querySelector("#campaignNameError");
+    const dateError = this.campaignModalElement.querySelector("#campaignEndDateError");
+    
+    // Resetar estados de erro
+    nameError.textContent = "";
+    dateError.textContent = "";
+    campaignName.classList.remove("input-error");
+    campaignEndDate.classList.remove("input-error");
+    
+    // Validar nome da campanha
+    if (!campaignName.value.trim()) {
+      nameError.textContent = "Nome da campanha é obrigatório";
+      campaignName.classList.add("input-error");
+      isValid = false;
+    } else if(campaignName.value.trim().length > 50) {
+      nameError.textContent = "Nome deve ter no máximo 50 caracteres";
+      campaignName.classList.add("input-error");
+      isValid = false;
+    }
+    else if (campaignName.value.trim().length < 3) {
+      nameError.textContent = "Nome deve ter pelo menos 3 caracteres";
+      campaignName.classList.add("input-error");
+      isValid = false;
+    }
+    
+    // Validar data de encerramento
+    if (!campaignEndDate.value) {
+      dateError.textContent = "Data de encerramento é obrigatória";
+      campaignEndDate.classList.add("input-error");
+      isValid = false;
+    } else {
+      const selectedDate = new Date(campaignEndDate.value + "T23:59:59");
+      const today = new Date();
+      const diffHours = (selectedDate - today) / (1000 * 60 * 60);
+      if (selectedDate < today) {
+        dateError.textContent = "A data deve ser hoje ou futura";
+        campaignEndDate.classList.add("input-error");
+        isValid = false;
+      }
+
+      if(diffHours < 1) {
+        dateError.textContent = "⛔ Não é possível criar um questionário com menos de 1 hora de duração. " +
+        "Por favor, agende para o dia seguinte.";
+        campaignEndDate.classList.add("input-error");
+        isValid = false;
+      }
+    }
+    
+    return isValid;
+  }
+
+  _validateAndProceedWithCsv() {
+    if (!this._validateCampaignForm()) {
+      showNotification("Por favor, corrija os campos do formulário.", "error");
+      return;
+    }
+    
     if (!this.csvFile) {
       showNotification("Por favor, selecione um arquivo CSV.", "error");
       return;
     }
+    
+    this.campaignData = {
+      name: this.campaignModalElement.querySelector("#campaignName").value.trim(),
+      endDate: this.campaignModalElement.querySelector("#campaignEndDate").value
+    };
+
+    this.campaignFormData = {...this.campaignData}
+    
+    // Procede com a leitura do CSV
     const reader = new FileReader();
     reader.onload = (event) => {
       const csvText = event.target.result;
@@ -416,16 +549,15 @@ export default class QuestionnairesSection {
 
   _validateCsvEmail(email) {
     if (!email || typeof email !== 'string') return false;
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email.trim());
   }
 
   _validateCsvPhoneNumber(phone) {
     if (!phone || typeof phone !== 'string') return false;
-    const withSpaces = phone.replace(/[-()]/g, ' ');
-    const digitsOnly = withSpaces.replace(/\s+/g, '');
-    const regex = /^(?:\d{8}|\d{9}|\d{10}|\d{11})$/;
-    return regex.test(digitsOnly);
+    const normalized = phone.replace(/[\s\-().]/g, '');
+    const e164 = /^\+?[1-9]\d{1,14}$/;
+    return e164.test(normalized);
   }
   _processCsv(csvText) {
     this.allProcessedContacts = []; 
@@ -450,9 +582,9 @@ export default class QuestionnairesSection {
       const values = line.split(',');
       const contactData = {
         id: this.generateSimpleUniqueId(), 
-        nome: values[nameIndex] ? values[nameIndex].trim() : '',
+        name: values[nameIndex] ? values[nameIndex].trim() : '',
         email: values[emailIndex] ? values[emailIndex].trim() : '',
-        telefone: values[phoneIndex] ? values[phoneIndex].trim() : '',
+        phone: values[phoneIndex] ? values[phoneIndex].trim() : '',
       };
       this._validateContactData(contactData);
       this.allProcessedContacts.push(contactData);
@@ -498,10 +630,10 @@ export default class QuestionnairesSection {
     const contactsHtml = contacts.map(contact => `
       <div class="contact-item" data-contact-id="${contact.id}">
         <div class="contact-info">
-          <span class="contact-name">${contact.nome || '(Sem nome)'}</span>
+          <span class="contact-name">${contact.name || '(Sem nome)'}</span>
           <span class="contact-detail">${contact.email || '(Sem email)'}</span>
-          <span class="contact-detail">${contact.telefone || '(Sem telefone)'}</span>
-          ${!contact.isValid ? `<span class="contact-invalid-reason">Motivo: ${contact.motivoInvalidez.join(', ')}</span>` : ''}
+          <span class="contact-detail">${contact.phone || '(Sem telefone)'}</span>
+          ${!contact.isValid ? `<span class="contact-invalid-reason">Motivo: ${contact.invalidReason.join(', ')}</span>` : ''}
         </div>
         <div class="contact-actions">
           <button class="contact-action-btn edit-contact-btn" title="Editar">
@@ -528,7 +660,9 @@ export default class QuestionnairesSection {
 
   _addResultsViewEventListeners() {
     this.campaignModalElement.querySelector("#campaignModalBackToUploadBtn").addEventListener("click", () => {
-      this.campaignModalStep = 1; this.csvFile = null; this.allProcessedContacts = [];
+      this.campaignModalStep = 1; 
+      this.csvFile = null; 
+      this.allProcessedContacts = [];
       this._renderCampaignModalStep1();
     });
 
@@ -565,8 +699,8 @@ export default class QuestionnairesSection {
     if (invalidContacts.length === 0) return;
     let csvContent = "nome,email,telefone,motivo_invalidez\n";
     invalidContacts.forEach(c => {
-      const motivo = `"${c.motivoInvalidez.join('; ')}"`;
-      csvContent += `${c.nome || ''},${c.email || ''},${c.telefone || ''},${motivo}\n`;
+      const motivo = `"${c.invalidReason.join('; ')}"`;
+      csvContent += `${c.name || ''},${c.email || ''},${c.phone || ''},${motivo}\n`;
     });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -588,10 +722,10 @@ async _handleCreateCampaignFinal() {
   try {
     const validContactsPayload = this.allProcessedContacts
       .filter(c => c.isValid)
-      .map(({ nome, email, telefone }) => ({ 
-        name: nome, 
+      .map(({ name, email, phone }) => ({ 
+        name, 
         email, 
-        phone: telefone 
+        phone
       }));
 
     if (validContactsPayload.length === 0) {
@@ -602,9 +736,11 @@ async _handleCreateCampaignFinal() {
     // Preparar payload com os nomes de campos em inglês
     const payload = {
       questionnaireId: this.selectedQuestionnaire.id,
+      campaignName: this.campaignData.name,
+      endDate: this.campaignData.endDate,
       contacts: validContactsPayload
     };
-
+    console.log(payload)
     // Mostrar indicador de carregamento
     const createBtn = this.campaignModalElement.querySelector("#campaignModalCreateFinalBtn");
     const originalBtnText = createBtn.textContent;
@@ -634,14 +770,10 @@ async _handleCreateCampaignFinal() {
 
     const data = await response.json();
     
+    navigateTo("/dashboard/campaigns");
     showNotification(`Campanha criada com ${validContactsPayload.length} contatos.`, "success");
     this._closeCampaignModal();
     
-    // Redirecionar para a página de campanhas
-    setTimeout(() => {
-      window.history.pushState({}, '', `/dashboard/campaigns`);
-      window.dispatchEvent(new Event('popstate'));
-    }, 1500);
     
     return data;
   } catch (error) {
@@ -705,9 +837,9 @@ async _handleCreateCampaignFinal() {
     this.contactBeingEdited = this.allProcessedContacts.find(c => c.id === contactId);
     if (!this.contactBeingEdited) return;
 
-    this.editContactModalElement.querySelector("#editContactName").value = this.contactBeingEdited.nome;
+    this.editContactModalElement.querySelector("#editContactName").value = this.contactBeingEdited.name;
     this.editContactModalElement.querySelector("#editContactEmail").value = this.contactBeingEdited.email;
-    this.editContactModalElement.querySelector("#editContactPhone").value = this.contactBeingEdited.telefone;
+    this.editContactModalElement.querySelector("#editContactPhone").value = this.contactBeingEdited.phone;
 
     this.editContactModalElement.querySelectorAll('.input-error-msg').forEach(el => el.textContent = '');
     this.editContactModalElement.querySelectorAll('input').forEach(el => el.classList.remove('input-error-border'));
@@ -736,16 +868,16 @@ async _handleCreateCampaignFinal() {
     [nameInput, emailInput, phoneInput].forEach(el => el.classList.remove('input-error-border'));
     [nameErrorSpan, emailErrorSpan, phoneErrorSpan].forEach(el => el.textContent = '');
     
-    const nome = nameInput.value.trim();
+    const name = nameInput.value.trim();
     const email = emailInput.value.trim();
-    const telefone = phoneInput.value.trim();
+    const phone = phoneInput.value.trim();
     
-    const dataToValidate = { nome, email, telefone }; 
+    const dataToValidate = { name, email, phone }; 
     
     this._validateContactData(dataToValidate);
 
     if (!dataToValidate.isValid) {
-        dataToValidate.motivoInvalidez.forEach(reason => {
+        dataToValidate.invalidReason.forEach(reason => {
             if (reason.toLowerCase().includes("nome")) {
                 nameInput.classList.add('input-error-border');
                 nameErrorSpan.textContent = reason;
@@ -763,11 +895,11 @@ async _handleCreateCampaignFinal() {
     
     const contactIndex = this.allProcessedContacts.findIndex(c => c.id === this.contactBeingEdited.id);
     if (contactIndex > -1) {
-        this.allProcessedContacts[contactIndex].nome = nome; 
+        this.allProcessedContacts[contactIndex].name = name; 
         this.allProcessedContacts[contactIndex].email = email;
-        this.allProcessedContacts[contactIndex].telefone = telefone;
+        this.allProcessedContacts[contactIndex].phone = phone;
         this.allProcessedContacts[contactIndex].isValid = true; 
-        this.allProcessedContacts[contactIndex].motivoInvalidez = []; 
+        this.allProcessedContacts[contactIndex].invalidReason = []; 
     }
     
     this._closeEditContactModal();

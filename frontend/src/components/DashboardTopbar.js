@@ -10,7 +10,6 @@ export default class DashboardTopbar {
   
 
   render() {
-    console.log("AAAAAAAAAAAAAA", localStorage.getItem("user"));
     this.element = document.createElement('header');
     this.element.className = 'topbar';
   

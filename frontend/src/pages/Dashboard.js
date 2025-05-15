@@ -98,7 +98,7 @@ class Dashboard {
     if (this.sectionComponents[section]) {
       return this.sectionComponents[section];
     }
-    console.log(`Creating new component for section: ${section}`);
+    // console.log(`Creating new component for section: ${section}`);
     // Create a new component based on section
     let component;
     switch (section) {
