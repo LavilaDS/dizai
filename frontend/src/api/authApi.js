@@ -14,3 +14,15 @@ export async function login({ email, password }) {
     return { ok: false, data: { error: 'Erro de conexão com o servidor.' } };
   }
 }
+
+export async function checkSession() {
+  try {
+    const res = await fetch('/api/auth/validate-session', {
+      method: 'GET',
+      credentials: 'include'
+    });
+    return res.ok;
+  } catch(err) {
+    return false;
+  }
+}

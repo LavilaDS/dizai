@@ -1,6 +1,6 @@
 import LayoutManager from "./components/LayoutManager.js";
 import Dashboard from "./pages/Dashboard.js";
-import  checkSession  from "./utils/checkSession.js";
+import  { checkSession }  from "/src/api/authApi.js";
 import { showNotification } from "./utils/notification.js";
 
 class Router {
