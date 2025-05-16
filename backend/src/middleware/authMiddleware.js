@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const { verifyAccessToken } = require('../utils/jwtUtils');
 const { env } = require('../config');
 const SECRET = env.jwtSecret
 const AppError = require('../utils/AppError');
@@ -9,7 +9,7 @@ function authenticateUser(req, res, next) {
     throw new AppError('Token não fornecido.', 401);
   }
   try {
-    const decoded = jwt.verify(token, SECRET);
+    const decoded = verifyAccessToken(token);
     req.user = decoded; 
     next();
   } catch (err) {
