@@ -29,16 +29,15 @@ class Router {
       const path = window.location.pathname;
       let ComponentToRender;
       let initialSection = null;
-
       if (path === "/login" || path === "/signup") {
         if (await checkSession()) {
+          console.log("Usuário já está logado. Redirecionando para o painel.");
           window.history.pushState({}, '', '/dashboard/overview');
           window.dispatchEvent(new Event('popstate'));
           showNotification("Você já está logado. Redirecionando para o painel.");
           return;
         }
       }
-  
       if (path.startsWith("/dashboard")) {
         const valid = await checkSession();
         if (!valid) {

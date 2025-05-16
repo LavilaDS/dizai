@@ -1,6 +1,8 @@
 // frontend/src/components/DashboardComponents/QuestionnairesSection.js
 import { showNotification } from '../../utils/notification.js'; // Importar a função de notificação
 import { navigateTo } from '../../router.js';
+import { createCampaign } from '../../api/campaignsApi.js';
+import { fetchQuestionnaires, fetchQuestionnaireDetails } from '../../api/questionnairesApi.js';
 
 export default class QuestionnairesSection {
   constructor() {
@@ -88,7 +90,6 @@ export default class QuestionnairesSection {
       await this._fetchQuestionnaires();
     } catch (error) {
       this.error = error.message || "Erro ao carregar questionários";
-      console.error("Erro ao carregar questionários:", error);
     } finally {
       this.loading = false;
       this._renderContent();
@@ -155,13 +156,10 @@ export default class QuestionnairesSection {
 
   async _fetchQuestionnaires() {
     try {
-      const response = await fetch("/api/questionnaires", { credentials: "include" });
-      if (!response.ok) throw new Error(`Erro ${response.status}`);
-      const data = await response.json();
+      const { data } = await fetchQuestionnaires();
       this.questionnaires = data.map(q => ({ ...q, color: q.color || this._getRandomColor() }));
     } catch (error) {
       this.error = error.message || "Erro ao carregar questionários";
-      console.error("Erro ao carregar questionários:", error);
       showNotification("Erro ao carregar questionários.", "error");
     }
   }
@@ -229,18 +227,18 @@ export default class QuestionnairesSection {
   }
 
   async _fetchQuestionnaireDetails(questionnaireId) {
-    const delay = new Promise(resolve => setTimeout(resolve, 500));
-    const fetchData = fetch(`/api/questionnaires/${questionnaireId}/questions`, { credentials: "include" })
-      .then(async response => {
-        if (!response.ok) throw new Error(`Erro ${response.status}`);
-        this.selectedQuestionnaireData = await response.json();
+    const delay = new Promise(resolve => setTimeout(resolve, 700));
+    const fetch = fetchQuestionnaireDetails(questionnaireId)
+      .then(async data => {
+        this.selectedQuestionnaireData = data;
       });
-    await Promise.all([delay, fetchData]);
+    await Promise.all([delay, fetch]);
   }
 
   _updateQuestionnaireViewModalContent() {
     const modalQuestions = document.getElementById("questionnaireViewModalQuestions");
-    const applyButton = document.getElementById("questionnaireViewModalCreateCampaignBtn");    if (this.selectedQuestionnaireData && this.selectedQuestionnaireData.length > 0) {
+    const applyButton = document.getElementById("questionnaireViewModalCreateCampaignBtn");    
+    if (this.selectedQuestionnaireData && this.selectedQuestionnaireData.length > 0) {
       modalQuestions.innerHTML = this.selectedQuestionnaireData
         .sort((a,b) => a.order_number - b.order_number)
         .map((q, i) => this._renderQuestionTemplate(q, i)).join("");
@@ -254,7 +252,7 @@ export default class QuestionnairesSection {
   _renderQuestionTemplate(question, index) {
     const { statement, question_type, options, required } = question;
     const requiredIcon = required ? `<span class="required-icon" title="Obrigatória"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="red"><circle cx="12" cy="12" r="10" /></svg></span>` : "";
-    const headerHtml = `<div class="modal-question-header"><span class="modal-question-number">${index + 1}.</span><span class="modal-question-text">${statement} ${requiredIcon}</span><span class="modal-question-type">${this.questionTypes[question_type] || question_type}</span></div>`;
+    const headerHtml = `<div class="modal-question-header"><span class="modal-question-text"><span class="modal-question-number">${index + 1}.</span>${statement} ${requiredIcon}</span><span class="modal-question-type">${this.questionTypes[question_type] || question_type}</span></div>`;
     let optionsHtml = "";
     switch (question_type) {
       case "NUMERIC_SCALE": optionsHtml = this._renderNumericScale(options); break;
@@ -376,7 +374,7 @@ export default class QuestionnairesSection {
     const bodyContent = this.campaignModalElement.querySelector("#campaignModalBodyContent");
     const footerContent = this.campaignModalElement.querySelector("#campaignModalFooterContent");
   
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   
     const formattedEndDate = this.campaignFormData.endDate
       ? new Date(this.campaignFormData.endDate + "T00:00:00").toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -733,53 +731,31 @@ async _handleCreateCampaignFinal() {
       return;
     }
     
-    // Preparar payload com os nomes de campos em inglês
     const payload = {
       questionnaireId: this.selectedQuestionnaire.id,
       campaignName: this.campaignData.name,
       endDate: this.campaignData.endDate,
       contacts: validContactsPayload
     };
-    console.log(payload)
-    // Mostrar indicador de carregamento
+
     const createBtn = this.campaignModalElement.querySelector("#campaignModalCreateFinalBtn");
     const originalBtnText = createBtn.textContent;
     createBtn.disabled = true;
     createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-    
-    // Enviar para o backend
-    const response = await fetch('/api/campaigns', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(payload),
-      credentials: 'include'
-    });
 
-    // Restaurar botão
+    const { data } = await createCampaign(payload);
+
     createBtn.disabled = false;
     createBtn.textContent = originalBtnText;
-    console.log("Resposta do servidor:", response);
-    // Tratar resposta
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error);
-    }
 
-    const data = await response.json();
-    
     navigateTo("/dashboard/campaigns");
     showNotification(`Campanha criada com ${validContactsPayload.length} contatos.`, "success");
     this._closeCampaignModal();
-    
-    
+
     return data;
   } catch (error) {
-    console.error("Erro ao criar campanha:", error);
     showNotification(
-      `Erro ao criar campanha: ${error.message || "Tente novamente mais tarde."}`, 
+      `Erro ao criar campanha: ${error.message || "Tente novamente mais tarde."}`,
       "error"
     );
   }

@@ -4,7 +4,7 @@ async function createCampaign({ managerId, questionnaireId, name, quantity, endD
   const { rows } = await pool.query(
     `INSERT INTO campaigns (manager_id, questionnaire_id, name, quantity, end_date)
      VALUES ($1, $2, $3, $4, $5)
-     RETURNING *`,
+     RETURNING id`,
     [managerId, questionnaireId, name, quantity, endDate]
   );
   return rows[0];

@@ -72,9 +72,24 @@ class Login {
     }, 100);
   }
 
-  unmount() {
-    // Clean up if needed
+unmount() {
+  // Remove event listeners
+  const form = document.getElementById("login-form");
+  if (form) {
+    // Remover todos os event listeners adicionados ao formulário
+    // usando o método cloneNode para substituir o elemento
+    const newForm = form.cloneNode(true);
+    if (form.parentNode) {
+      form.parentNode.replaceChild(newForm, form);
+    }
   }
+  
+  // Remover referências a elementos DOM
+  this.element.innerHTML = '';
+  
+  // Resetar estado do componente
+  this.load = false;
+}
 }
 
 export default Login;

@@ -1,3 +1,6 @@
+import { checkSession } from '../api/authApi.js';
+import { showNotification } from '../utils/notification.js';
+import { navigateTo } from '../router.js';
 // Dashboard component - refactored to load sections on demand
 import DashboardSidebar from '../components/DashboardSidebar.js';
 import DashboardTopbar from '../components/DashboardTopbar.js';
@@ -113,6 +116,12 @@ class Dashboard {
       if (this.activeSection.unmount) {
         this.activeSection.unmount(); // Clean up event listeners
       }
+    }
+
+    if(await checkSession() === false) {
+      showNotification("Sessão expirada. Faça login novamente.", "error");
+      navigateTo('/login');
+      return;
     }
 
     // Create a new component for the section
