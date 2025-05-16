@@ -55,7 +55,7 @@ export async function logout() {
       if (res.ok) {
         return true;
       } else {
-        window.location.href = '/login.html?mensagem=Erro ao sair da sessão';
+        navigateTo("/login")
         return false;
       }
     } catch (error) {
