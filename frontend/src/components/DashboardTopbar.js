@@ -1,18 +1,21 @@
 import { logout } from '../api/authApi.js';
 import { showNotification } from '../utils/notification.js';
-
+import ProfileManager from './common/ProfileManager.js';
+import { getInitialName } from '../utils/getInitialName.js';
 export default class DashboardTopbar {
   constructor(toggleSidebarMobileCallback, currentSection) {
     this.element = null;
     this.toggleSidebarMobileCallback = toggleSidebarMobileCallback;
     this.currentSection = currentSection || 'Visão Geral';
+    this.profileManager = new ProfileManager();
   }
   
 
   render() {
+    const user = localStorage.getItem("user");
+    const initialName = getInitialName(user);
     this.element = document.createElement('header');
     this.element.className = 'topbar';
-  
     this.element.innerHTML = `
       <button class="mobile-menu-toggle" id="mobile-menu-toggle">
         <i class="fas fa-bars"></i>
@@ -25,7 +28,7 @@ export default class DashboardTopbar {
         </button>
         <div class="dropdown" id="user-dropdown">
           <div class="user-profile" id="user-profile-btn">
-            <div class="user-avatar">JS</div>
+            <div class="user-avatar">${initialName}</div>
             <div class="user-info">
               <div class="user-name">${localStorage.getItem("user")}</div>
               <div class="user-role">Gestor</div>
@@ -33,8 +36,8 @@ export default class DashboardTopbar {
             <i class="fas fa-chevron-down"></i>
           </div>
           <div class="dropdown-menu" id="user-dropdown-menu">
-            <div class="dropdown-header">João Silva</div>
-            <a href="#" class="dropdown-item">
+            <div class="dropdown-header">${localStorage.getItem("user") || "Usuário"}</div>
+            <a href="#" class="dropdown-item" id="profile-btn">
               <i class="fas fa-user"></i> Meu Perfil
             </a>
             <div class="dropdown-divider"></div>
@@ -85,6 +88,18 @@ export default class DashboardTopbar {
       });
     }
 
+    // Profile Button
+    const profileBtn = this.element.querySelector('#profile-btn');
+    if (profileBtn) {
+      profileBtn.addEventListener('click', async(e) => {
+        e.preventDefault();
+        // Close dropdown
+        userDropdownMenu.classList.remove('show');
+        // Open profile modal
+        this.profileManager.openProfileModal();
+      });
+    }
+
     // Logout Button
     const logoutBtn = this.element.querySelector('#logout-btn');
     if (logoutBtn) {
@@ -112,6 +127,11 @@ export default class DashboardTopbar {
     const userProfileBtn = this.element.querySelector('#user-profile-btn');
     if (userProfileBtn) {
       userProfileBtn.replaceWith(userProfileBtn.cloneNode(true));
+    }
+    
+    const profileBtn = this.element.querySelector('#profile-btn');
+    if (profileBtn) {
+      profileBtn.replaceWith(profileBtn.cloneNode(true));
     }
 
     const logoutBtn = this.element.querySelector('#logout-btn');
