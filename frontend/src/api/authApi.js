@@ -19,6 +19,24 @@ export async function checkSession() {
   try {
     const res = await fetch('/api/auth/validate-session', {
       method: 'GET',
+      credentials: 'include',
+    });
+
+    if (res.status === 401) {
+      const refreshed = await refreshToken();
+      return refreshed;
+    }
+
+    return res.ok;
+  } catch (err) {
+    return false;
+  }
+}
+
+export async function refreshToken() {
+  try {
+    const res = await fetch('/api/auth/refresh-token', {
+      method: 'POST',
       credentials: 'include'
     });
     return res.ok;
