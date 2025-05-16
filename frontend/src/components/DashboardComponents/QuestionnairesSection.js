@@ -252,7 +252,7 @@ export default class QuestionnairesSection {
   _renderQuestionTemplate(question, index) {
     const { statement, question_type, options, required } = question;
     const requiredIcon = required ? `<span class="required-icon" title="Obrigatória"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="red"><circle cx="12" cy="12" r="10" /></svg></span>` : "";
-    const headerHtml = `<div class="modal-question-header"><span class="modal-question-number">${index + 1}.</span><span class="modal-question-text">${statement} ${requiredIcon}</span><span class="modal-question-type">${this.questionTypes[question_type] || question_type}</span></div>`;
+    const headerHtml = `<div class="modal-question-header"><span class="modal-question-text"><span class="modal-question-number">${index + 1}.</span>${statement} ${requiredIcon}</span><span class="modal-question-type">${this.questionTypes[question_type] || question_type}</span></div>`;
     let optionsHtml = "";
     switch (question_type) {
       case "NUMERIC_SCALE": optionsHtml = this._renderNumericScale(options); break;
