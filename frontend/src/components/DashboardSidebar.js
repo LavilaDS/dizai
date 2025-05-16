@@ -32,6 +32,10 @@ export default class DashboardSidebar {
           <i class="fas fa-file-alt"></i>
           <span class="menu-text">Questionários</span>
         </a>
+        <a href="/dashboard/campaigns" class="sidebar-menu-item" data-section="campaigns">
+          <i class="fas fa-paper-plane"></i>
+          <span class="menu-text">Campanhas</span>
+        </a>
         <div class="sidebar-divider"></div>
         <a href="/dashboard/reports" class="sidebar-menu-item" data-section="reports">
           <i class="fas fa-chart-bar"></i>
@@ -75,6 +79,11 @@ export default class DashboardSidebar {
         // On mobile, close sidebar after selection
         if (window.innerWidth <= 768) {
           this.element.classList.remove('mobile-open');
+          // Also hide overlay when closing menu by item selection
+          const overlay = document.querySelector('.mobile-overlay');
+          if (overlay) {
+            overlay.classList.remove('active');
+          }
         }
       });
     });
@@ -86,6 +95,32 @@ export default class DashboardSidebar {
 
   toggleMobileOpen() {
     this.element.classList.toggle('mobile-open');
+    
+    // Create or remove overlay for mobile
+    if (this.element.classList.contains('mobile-open')) {
+      // Create overlay if it doesn't exist
+      if (!document.querySelector('.mobile-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'mobile-overlay';
+        document.body.appendChild(overlay);
+        
+        // Add click event to close sidebar when clicking outside
+        overlay.addEventListener('click', () => {
+          this.element.classList.remove('mobile-open');
+          overlay.classList.remove('active');
+        });
+      }
+      
+      // Show overlay
+      const overlay = document.querySelector('.mobile-overlay');
+      overlay.classList.add('active');
+    } else {
+      // Hide overlay
+      const overlay = document.querySelector('.mobile-overlay');
+      if (overlay) {
+        overlay.classList.remove('active');
+      }
+    }
   }
 
   setActiveSection(section) {

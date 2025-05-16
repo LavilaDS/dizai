@@ -7,6 +7,7 @@ import ScrollTopButton from '../components/ScrollTopButton.js';
 import OverviewSection from '../components/DashboardComponents/OverviewSection.js';
 import QuestionnairesSection from '../components/DashboardComponents/QuestionnairesSection.js';
 import ReportsSection from '../components/DashboardComponents/ReportsSection.js';
+import CampaignsSection from '../components/DashboardComponents/CampaignsSection.js';
 
 class Dashboard {
   constructor() {
@@ -35,7 +36,8 @@ class Dashboard {
     this.sectionTitles = {
       'overview': 'Visão Geral',
       'questionnaires': 'Questionários',
-      'reports': 'Relatórios'
+      'reports': 'Relatórios',
+      'campaigns': 'Campanhas'
     };
     
     // Component references
@@ -93,13 +95,27 @@ class Dashboard {
     this.element.appendChild(this.scrollTopButton.render());
   }
 
-  getComponentForSection(section) {
-    // Return cached component if it exists
-    if (this.sectionComponents[section]) {
-      return this.sectionComponents[section];
+  async activateSection(section, shouldPushState = true) {
+    const mainContent = document.getElementById('dashboard-main-content');
+
+    // Update current section
+    this.currentSection = section;
+
+    // Update sidebar active item
+    this.sidebar.setActiveSection(section);
+
+    // Update topbar title
+    this.topbar.setTitle(this.sectionTitles[section]);
+
+    // Remove the current active section from the DOM
+    if (this.activeSection && this.activeSection.element) {
+      this.activeSection.element.remove();
+      if (this.activeSection.unmount) {
+        this.activeSection.unmount(); // Clean up event listeners
+      }
     }
-    // console.log(`Creating new component for section: ${section}`);
-    // Create a new component based on section
+
+    // Create a new component for the section
     let component;
     switch (section) {
       case 'overview':
@@ -111,56 +127,26 @@ class Dashboard {
       case 'reports':
         component = new ReportsSection();
         break;
+      case 'campaigns':
+        component = new CampaignsSection();
+        break;
       default:
         component = new OverviewSection();
     }
-    
-    // Cache the component
-    this.sectionComponents[section] = component;
-    return component;
-  }
 
-  async activateSection(section, shouldPushState = true) {
-    const mainContent = document.getElementById('dashboard-main-content');
-    
-    // Update current section
-    this.currentSection = section;
-    
-    // Update sidebar active item
-    this.sidebar.setActiveSection(section);
-    
-    // Update topbar title
-    this.topbar.setTitle(this.sectionTitles[section]);
-    
-    // Verificar se já temos um elemento renderizado para este componente
-    const component = this.getComponentForSection(section);
-    
-    // Remover a seção ativa atual apenas se for diferente da nova
-    if (this.activeSection && this.activeSection !== component) {
-        if (this.activeSection.element) {
-            this.activeSection.element.remove();
-        }
-    }
-    
-    // Se o componente já tiver um elemento e ele não estiver no DOM, anexá-lo
-    if (component.element) {
-        if (!component.element.isConnected) {
-            mainContent.appendChild(component.element);
-        }
-    } else {
-        // Renderizar o componente pela primeira vez
-        mainContent.appendChild(await component.render());
-    }
-    
+    // Render the new component and append it to the main content
+    mainContent.appendChild(await component.render());
+
     this.activeSection = component;
-    
+
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (shouldPushState) {
-        window.history.pushState({}, '', `/dashboard/${section}`);
+      window.history.pushState({}, '', `/dashboard/${section}`);
     }
   }
+
   toggleSidebar() {
     this.sidebar.toggleCollapse();
     document.querySelector('.main-content').style.marginLeft = 

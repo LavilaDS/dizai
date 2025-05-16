@@ -23,7 +23,7 @@ export default class OverviewSection {
       </div>
 
       <!-- Stats Cards -->
-      <div class="grid grid-4">
+      <div class="grid grid-3">
         <div class="card">
           <div class="stat-card">
             <div class="stat-icon primary">
@@ -64,21 +64,6 @@ export default class OverviewSection {
               <div class="stat-label">Respostas Recebidas</div>
               <div class="stat-change positive">
                 <i class="fas fa-arrow-up"></i> 18% este mês
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="stat-card">
-            <div class="stat-icon success">
-              <i class="fas fa-chart-line"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">76%</div>
-              <div class="stat-label">Taxa de Resposta</div>
-              <div class="stat-change positive">
-                <i class="fas fa-arrow-up"></i> 5% este mês
               </div>
             </div>
           </div>
@@ -162,127 +147,6 @@ export default class OverviewSection {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent Campaigns -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">Campanhas Recentes</h2>
-          <div class="card-actions">
-            <button class="icon-btn">
-              <i class="fas fa-ellipsis-v"></i>
-            </button>
-          </div>
-        </div>
-        <div class="card-content">
-          <div class="table-container">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Nome da Campanha</th>
-                  <th>Questionário</th>
-                  <th>Envios</th>
-                  <th>Respostas</th>
-                  <th>Taxa</th>
-                  <th>Status</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Avaliação de Desempenho</td>
-                  <td>Avaliação de Desempenho Anual</td>
-                  <td>45</td>
-                  <td>23</td>
-                  <td>51%</td>
-                  <td>
-                    <div class="status active">
-                      <span class="status-dot"></span>
-                      Ativa
-                    </div>
-                  </td>
-                  <td>
-                    <button class="icon-btn">
-                      <i class="fas fa-eye"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Pesquisa de Satisfação</td>
-                  <td>Satisfação no Trabalho</td>
-                  <td>120</td>
-                  <td>98</td>
-                  <td>82%</td>
-                  <td>
-                    <div class="status active">
-                      <span class="status-dot"></span>
-                      Ativa
-                    </div>
-                  </td>
-                  <td>
-                    <button class="icon-btn">
-                      <i class="fas fa-eye"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Clima Organizacional</td>
-                  <td>Clima Organizacional 2025</td>
-                  <td>78</td>
-                  <td>65</td>
-                  <td>83%</td>
-                  <td>
-                    <div class="status completed">
-                      <span class="status-dot"></span>
-                      Concluída
-                    </div>
-                  </td>
-                  <td>
-                    <button class="icon-btn">
-                      <i class="fas fa-eye"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Feedback de Processos</td>
-                  <td>Processos Internos</td>
-                  <td>32</td>
-                  <td>28</td>
-                  <td>88%</td>
-                  <td>
-                    <div class="status completed">
-                      <span class="status-dot"></span>
-                      Concluída
-                    </div>
-                  </td>
-                  <td>
-                    <button class="icon-btn">
-                      <i class="fas fa-eye"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>NPS Colaboradores</td>
-                  <td>NPS Interno</td>
-                  <td>0</td>
-                  <td>0</td>
-                  <td>0%</td>
-                  <td>
-                    <div class="status draft">
-                      <span class="status-dot"></span>
-                      Rascunho
-                    </div>
-                  </td>
-                  <td>
-                    <button class="icon-btn">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
