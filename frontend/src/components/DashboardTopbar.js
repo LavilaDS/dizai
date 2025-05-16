@@ -1,4 +1,4 @@
-import Logout from '../utils/logout.js'
+import { logout } from '../api/authApi.js';
 import { showNotification } from '../utils/notification.js';
 
 export default class DashboardTopbar {
@@ -90,7 +90,7 @@ export default class DashboardTopbar {
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async(e) => {
         e.preventDefault();
-        const sucess = await Logout();
+        const sucess = await logout();
         if(sucess) {
           window.history.pushState({}, '', '/login');
           window.dispatchEvent(new Event('popstate'));
