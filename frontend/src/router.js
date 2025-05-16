@@ -31,7 +31,6 @@ class Router {
       let initialSection = null;
       if (path === "/login" || path === "/signup") {
         if (await checkSession()) {
-          console.log("Usuário já está logado. Redirecionando para o painel.");
           window.history.pushState({}, '', '/dashboard/overview');
           window.dispatchEvent(new Event('popstate'));
           showNotification("Você já está logado. Redirecionando para o painel.");

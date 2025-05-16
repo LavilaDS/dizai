@@ -1,5 +1,5 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../utils/jwtUtils');
+const { comparePassword } = require('../utils/bcryptUtils');
 const AppError = require('../utils/AppError');
 const { env } = require('../config');
 const managerRepository = require('../repositories/managerRepository');
@@ -14,13 +14,13 @@ async function login(email, password) {
   if (!manager) {
       throw new AppError('Credenciais inválidas', 401);
   }
-  const validPassword = await bcrypt.compare(password, manager.password_hash);
+  const validPassword = await comparePassword(password, manager.password_hash);
   if (!validPassword) {
       throw new AppError('Credenciais inválidas', 401);
   }
   // Gera o token JWT
-  const token = jwt.sign({ id: manager.id, email: manager.email }, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
-  const refreshToken = jwt.sign({ id: manager.id, email: manager.email }, env.jwtRefreshSecret, { expiresIn: env.jwtRefreshExpiresIn });
+  const token = signAccessToken({ id: manager.id, email: manager.email });
+  const refreshToken = signRefreshToken({ id: manager.id }); // Removido email do refresh token
   return { refreshToken, token, manager: { id: manager.id, name: manager.name, email: manager.email } };
 }
 
@@ -30,30 +30,28 @@ async function refreshAccessToken(refreshToken) {
   }
 
   try {
-    const decoded = jwt.verify(refreshToken, env.jwtRefreshSecret);
+    const decoded = verifyRefreshToken(refreshToken);
 
-    if (!decoded?.id || !decoded?.email) {
+    if (!decoded?.id) {
       throw new AppError('Refresh token inválido ou malformado', 401);
     }
 
-    const newAccessToken = jwt.sign(
-      { id: decoded.id, email: decoded.email },
-      env.jwtSecret,
-      { expiresIn: env.jwtExpiresIn }
-    );
+    // Busca os dados do gerente no banco de dados
+    const manager = await managerRepository.findById(decoded.id);
+    if (!manager) {
+      throw new AppError('Usuário não encontrado', 404);
+    }
+
+    const newAccessToken = signAccessToken({ id: manager.id }); // Não inclui dados pessoais no payload do access token
 
     return {
       token: newAccessToken,
-      manager: { id: decoded.id, email: decoded.email }
+      manager: { id: manager.id, name: manager.name, email: manager.email },
     };
   } catch (err) {
     throw new AppError('Refresh token inválido ou expirado', 401);
   }
 }
-
-// Futuras funções: logout, refreshToken, etc.
-// async function logout() { ... }
-// async function refreshToken() { ... }
 
 module.exports = { 
     login,

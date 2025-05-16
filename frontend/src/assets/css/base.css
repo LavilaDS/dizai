@@ -52,6 +52,11 @@ body {
   flex-direction: column;
 }
 
+/* Utility Classes */
+.hidden {
+  display: none !important;
+}
+
 main {
   flex: 1;
 }

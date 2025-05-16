@@ -13,7 +13,7 @@ export function validateEmail(email) {
 
 export function validatePassword(password) {
   // Pelo menos 6 caracteres, incluindo número e caractere especial
-  const lengthCheck = password.length >= 6;
+  const lengthCheck = password.length >= 8;
   const numberCheck = /\d/.test(password);
   const specialCheck = /[!@#$%^&*(),.?":{}|<>]/.test(password);
   return lengthCheck && numberCheck && specialCheck;

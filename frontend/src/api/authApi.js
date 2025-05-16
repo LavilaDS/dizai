@@ -1,3 +1,5 @@
+import { navigateTo } from "../router.js";
+
 export async function login({ email, password }) {
   try {
     const response = await fetch('/api/auth/login', {
@@ -55,7 +57,7 @@ export async function logout() {
       if (res.ok) {
         return true;
       } else {
-        window.location.href = '/login.html?mensagem=Erro ao sair da sessão';
+        navigateTo("/login")
         return false;
       }
     } catch (error) {

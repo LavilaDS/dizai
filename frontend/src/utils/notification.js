@@ -7,6 +7,7 @@ function getToastContainer() {
   if (!container) {
     container = document.createElement('div');
     container.id = 'toast-container';
+    container.style.zIndex = '9999'; // Ensure it appears above other elements
     document.body.appendChild(container);
   }
   return container;
