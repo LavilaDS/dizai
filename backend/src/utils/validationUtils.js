@@ -19,6 +19,52 @@ function _validatePhoneNumber(phone) {
   return e164.test(normalized);
 }
 
+function _validatePassword(password) {
+  if (!password || typeof password !== 'string') return false;
+  // Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number, and one special character
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return passwordRegex.test(password);
+}
+
+function _validateCompanyName(companyName) {
+  if (!companyName || typeof companyName !== 'string') return false;
+  const trimmedName = companyName.trim();
+  return trimmedName.length >= 2 && /^[A-ZÀ-ÿ0-9\s'-]+$/i.test(trimmedName);
+}
+
+function _validateCompanyCNPJ(cnpj) {
+  if (!cnpj || typeof cnpj !== 'string') return false;
+  const cleanedCNPJ = cnpj.replace(/\D/g, '');
+  if (cleanedCNPJ.length !== 14) return false;
+
+  let size = cleanedCNPJ.length - 2;
+  let numbers = cleanedCNPJ.substring(0, size);
+  let digits = cleanedCNPJ.substring(size);
+  let sum = 0;
+  let pos = size - 7;
+
+  for (let i = size; i >= 1; i--) {
+    sum += numbers.charAt(size - i) * pos--;
+    if (pos < 2) pos = 9;
+  }
+
+  let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (result !== parseInt(digits.charAt(0), 10)) return false;
+
+  size += 1;
+  numbers = cleanedCNPJ.substring(0, size);
+  sum = 0;
+  pos = size - 7;
+
+  for (let i = size; i >= 1; i--) {
+    sum += numbers.charAt(size - i) * pos--;
+    if (pos < 2) pos = 9;
+  }
+
+  result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  return result === parseInt(digits.charAt(1), 10);
+}
+
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 // New consolidated function for ID validation
@@ -84,5 +130,8 @@ module.exports = {
   validateContacts,
   _validateName,
   _validateEmail,
-  _validatePhoneNumber
+  _validatePhoneNumber,
+  _validatePassword,
+  _validateCompanyName,
+  _validateCompanyCNPJ,
 };
