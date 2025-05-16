@@ -1,5 +1,5 @@
 let lastToastTime = 0;
-const TOAST_DELAY = 1200; // 1.2 segundos
+const TOAST_DELAY = 2500; // 1.2 segundos
 
 // Toast de notificação reutilizável
 function getToastContainer() {
