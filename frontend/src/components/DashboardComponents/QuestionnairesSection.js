@@ -376,7 +376,7 @@ export default class QuestionnairesSection {
     const bodyContent = this.campaignModalElement.querySelector("#campaignModalBodyContent");
     const footerContent = this.campaignModalElement.querySelector("#campaignModalFooterContent");
   
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   
     const formattedEndDate = this.campaignFormData.endDate
       ? new Date(this.campaignFormData.endDate + "T00:00:00").toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
