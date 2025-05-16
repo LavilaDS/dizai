@@ -2,12 +2,14 @@ const campaignService = require('../services/campaignService');
 
 async function create(req, res, next) {
   try {
-    const {questionnaireId, contacts } = req.body;
+    const { questionnaireId, campaignName, endDate, contacts } = req.body;
 
     const managerId = req.user.id;
     const campaign = await campaignService.createCampaign({
       managerId,
       questionnaireId,
+      campaignName,
+      endDate,
       contacts,
     });
 
