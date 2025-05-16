@@ -1,5 +1,5 @@
-CREATE TYPE campaign_status_enum AS ENUM('ATIVA','CONCLUIDA');
-CREATE TYPE participant_status_enum AS ENUM('PENDENTE','ENVIADO','VISUALIZADO','RESPONDIDO');
+CREATE TYPE campaign_status_enum AS ENUM('PENDENTE', 'ATIVA','CONCLUIDA');
+CREATE TYPE participant_status_enum AS ENUM('INVALIDO', 'PENDENTE','ENVIADO','RESPONDIDO');
 -- Gestores
 CREATE TABLE managers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -30,19 +30,19 @@ CREATE TABLE questionnaires (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Questionario_tags
-CREATE TABLE questionnaire_tags (
-    questionnaire_id UUID REFERENCES questionnaires(id) ON DELETE CASCADE,
-    tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
-    PRIMARY KEY (questionnaire_id, tag_id)
-);
-
 -- Tags
 CREATE TABLE tags (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL,
     manager_id UUID REFERENCES managers(id) ON DELETE CASCADE,
     UNIQUE (name, manager_id)  -- Evita duplicação do mesmo nome para o mesmo gestor
+);
+
+-- Questionario_tags
+CREATE TABLE questionnaire_tags (
+    questionnaire_id UUID REFERENCES questionnaires(id) ON DELETE CASCADE,
+    tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (questionnaire_id, tag_id)
 );
 
 -- Tipos de Perguntas
@@ -72,15 +72,19 @@ CREATE TABLE answer_options (
 
 -- Campanhas
 CREATE TABLE campaigns (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    manager_id UUID NOT NULL REFERENCES managers(id) ON DELETE CASCADE,
-    questionnaire_id UUID NOT NULL REFERENCES questionnaires(id) ON DELETE CASCADE,
-    quantity INTEGER NOT NULL,
-    status campaign_status_enum NOT NULL DEFAULT 'ATIVA',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    started_at TIMESTAMPTZ,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  manager_id UUID NOT NULL REFERENCES managers(id) ON DELETE CASCADE,
+  questionnaire_id UUID NOT NULL REFERENCES questionnaires(id) ON DELETE CASCADE,
+  name VARCHAR(50) NOT NULL,                             
+  quantity INTEGER NOT NULL,
+  end_date TIMESTAMPTZ NOT NULL,
+  status campaign_status_enum NOT NULL DEFAULT 'PENDENTE',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  started_at TIMESTAMPTZ,                       
+  ended_at TIMESTAMPTZ,                        
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
 
 -- Participantes
 CREATE TABLE participants (
@@ -89,6 +93,7 @@ CREATE TABLE participants (
     email VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     token UUID NOT NULL,
+    email_resend_attempts INT DEFAULT 0,
     status participant_status_enum NOT NULL DEFAULT 'PENDENTE',
     sent_at TIMESTAMPTZ,
     responded_at TIMESTAMPTZ,
