@@ -505,12 +505,10 @@
 .likert-scale-container {
   display: flex;
   justify-content: space-between;
-  margin-left: 24px;
-  margin-right: 24px;
   margin-top: var(--spacing-md);
-  flex-wrap: wrap;
-  gap: var(--spacing-md);
+  align-items: center;;
 }
+
 
 .likert-scale-item {
   display: flex;
@@ -789,7 +787,12 @@
   padding-bottom: var(--spacing-sm);
   border-bottom: 1px solid var(--border-color);
   display: flex;
-  align-items: center;
+  align-items: space-between;
+}
+
+.contact-list-conteiner{
+  display:flex;
+  justify-content: space-around;
 }
 
 .contact-list-title::before {
@@ -896,10 +899,10 @@
 
 /* Estilos para o Modal de Edição de Contato */
 .campaign-modal-overlay { /* Modal de upload/resultados */
-    z-index: 1100; /* Padrão */
+    z-index: 1000; /* Padrão */
 }
 .edit-contact-modal-overlay { /* Modal de edição de contato */
-    z-index: 1150; /* Deve estar acima do modal de campanha */
+    z-index: 1100; /* Deve estar acima do modal de campanha */
 }
 
 /* Modal de edição de contato */
@@ -1244,7 +1247,7 @@ input:valid + .csv-file-name {
 }
 
 .campaign-modal-overlay {
-    z-index: 1100;
+    z-index: 1000;
 }
 
 .campaign-creation-modal .modal-body {
