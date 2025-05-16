@@ -614,44 +614,60 @@ export default class QuestionnairesSection {
 
     footerContent.innerHTML = `
       <button class="modal-button modal-button-secondary" id="campaignModalBackToUploadBtn">Voltar ao Upload</button>
-      ${invalidContacts.length > 0 ? `<button class="modal-button modal-button-neutral" id="campaignModalDownloadInvalidBtn">Contatos Inválidos</button>` : ''}
-      <button class="modal-button modal-button-primary" id="campaignModalCreateFinalBtn" ${validContacts.length === 0 ? 'disabled' : ''}>Criar Campanha</button>
+      ${validContacts.length > 0 ? `
+      <button class="modal-button modal-button-download-valid" id="download-valid-csv-btn" style="background:rgba(46,204,113,0.15);color:#27ae60;border:1px solid #27ae60;margin-left:8px;">
+        Baixar CSV Válidos
+      </button>
+      ` : ''}
+      ${invalidContacts.length > 0 ? `
+      <button class="modal-button modal-button-download-invalid" id="download-invalid-csv-btn" style="background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid #e74c3c;margin-left:8px;">
+        Baixar CSV Inválidos
+      </button>
+      ` : ''}
+      <button class="modal-button modal-button-primary" id="campaignModalCreateFinalBtn" ${validContacts.length === 0 ? 'disabled' : ''} style="margin-left:8px;">Criar Campanha</button>
     `;
 
     this._addResultsViewEventListeners();
   }
 
+  _handleDeleteContact(contactId) {
+    // Remove o contato da lista
+    this.allProcessedContacts = this.allProcessedContacts.filter(c => c.id !== contactId);
+    // Atualiza a visualização
+    this._renderCampaignResultsView();
+    showNotification("Contato removido com sucesso!", "success");
+  }
+
   _renderContactListSection(title, contacts, isValidList) {
     if (contacts.length === 0 && isValidList) return `<section class="contact-list-section"><h5 class="contact-list-title">${title} (0)</h5><p class="no-contacts-message">Nenhum contato válido.</p></section>`;
-    if (contacts.length === 0 && !isValidList) return ''; 
-
-    const contactsHtml = contacts.map(contact => `
-      <div class="contact-item" data-contact-id="${contact.id}">
-        <div class="contact-info">
-          <span class="contact-name">${contact.name || '(Sem nome)'}</span>
-          <span class="contact-detail">${contact.email || '(Sem email)'}</span>
-          <span class="contact-detail">${contact.phone || '(Sem telefone)'}</span>
-          ${!contact.isValid ? `<span class="contact-invalid-reason">Motivo: ${contact.invalidReason.join(', ')}</span>` : ''}
-        </div>
-        <div class="contact-actions">
-          <button class="contact-action-btn edit-contact-btn" title="Editar">
-            <i class="fas fa-pencil-alt"></i>
-          </button>
-          <button class="contact-action-btn delete-contact-btn" title="Excluir">
-             <i class="fas fa-times"></i>
-          </button>
-        </div>
-      </div>
-    `).join('');
-    // Alteração: Botão de excluir agora é renderizado para todos os contatos (válidos e inválidos)
-    // Se quiser apenas para válidos, use a lógica anterior:
-    // ${isValidList ? `<button class="contact-action-btn delete-contact-btn" ...><i class="fas fa-times"></i></button>` : ''}
-
+    if (contacts.length === 0 && !isValidList) return '';
 
     return `
       <section class="contact-list-section">
-        <h5 class="contact-list-title">${title} (${contacts.length})</h5>
-        <div class="contact-items-wrapper">${contactsHtml}</div>
+        <div class="contact-list-title-container">
+          <h5 class="contact-list-title">${title} (${contacts.length})</h5>
+
+        </div>
+        <div class="contact-items-wrapper">
+          ${contacts.map(contact => `
+            <div class="contact-item" data-contact-id="${contact.id}">
+              <div class="contact-info">
+                <span class="contact-name">${contact.name || '(Sem nome)'}</span>
+                <span class="contact-detail">${contact.email || '(Sem email)'}</span>
+                <span class="contact-detail">${contact.phone || '(Sem telefone)'}</span>
+                ${!contact.isValid ? `<span class="contact-invalid-reason">Motivo: ${contact.invalidReason.join(', ')}</span>` : ''}
+              </div>
+              <div class="contact-actions">
+                <button class="contact-action-btn edit-contact-btn" title="Editar">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#4649FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="contact-action-btn delete-contact-btn" title="Excluir">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
       </section>
     `;
   }
@@ -664,9 +680,19 @@ export default class QuestionnairesSection {
       this._renderCampaignModalStep1();
     });
 
-    const downloadBtn = this.campaignModalElement.querySelector("#campaignModalDownloadInvalidBtn");
-    if (downloadBtn) {
-      downloadBtn.addEventListener("click", () => this._downloadInvalidContacts());
+    const downloadValidBtn = this.campaignModalElement.querySelector('#download-valid-csv-btn');
+    if (downloadValidBtn) {
+      downloadValidBtn.addEventListener('click', () => {
+        const validContacts = this.allProcessedContacts.filter(c => c.isValid);
+        this._downloadCsv(validContacts, 'contatos_validos.csv');
+      });
+    }
+    const downloadInvalidBtn = this.campaignModalElement.querySelector('#download-invalid-csv-btn');
+    if (downloadInvalidBtn) {
+      downloadInvalidBtn.addEventListener('click', () => {
+        const invalidContacts = this.allProcessedContacts.filter(c => !c.isValid);
+        this._downloadCsv(invalidContacts, 'contatos_invalidos.csv');
+      });
     }
     this.campaignModalElement.querySelector("#campaignModalCreateFinalBtn").addEventListener("click", () => this._handleCreateCampaignFinal());
 
@@ -675,9 +701,7 @@ export default class QuestionnairesSection {
         contactsListContainer.addEventListener('click', (e) => {
             const contactItem = e.target.closest('.contact-item');
             if (!contactItem) return;
-            
             const contactId = contactItem.dataset.contactId;
-
             if (e.target.closest('.edit-contact-btn')) {
                 this._handleEditContact(contactId);
             } else if (e.target.closest('.delete-contact-btn')) {
@@ -686,35 +710,40 @@ export default class QuestionnairesSection {
         });
     }
   }
-  
-  _handleDeleteContact(contactId) {
-    this.allProcessedContacts = this.allProcessedContacts.filter(c => c.id !== contactId);
-    this._renderCampaignResultsView(); 
-  }
 
-  _downloadInvalidContacts() {
-    const invalidContacts = this.allProcessedContacts.filter(c => !c.isValid);
-    if (invalidContacts.length === 0) return;
-    let csvContent = "nome,email,telefone,motivo_invalidez\n";
-    invalidContacts.forEach(c => {
-      const motivo = `"${c.invalidReason.join('; ')}"`;
-      csvContent += `${c.name || ''},${c.email || ''},${c.phone || ''},${motivo}\n`;
+  _downloadCsv(contacts, filename) {
+    if (!contacts || contacts.length === 0) {
+      showNotification("Nenhum contato para baixar.", "info");
+      return;
+    }
+    const headers = ["nome", "email", "telefone"];
+    if (!contacts[0].isValid) headers.push("motivo_invalidez");
+    let csvContent = headers.join(",") + "\n";
+    contacts.forEach(contact => {
+      const row = [
+        contact.name || '',
+        contact.email || '',
+        contact.phone || ''
+      ];
+      if (!contact.isValid) {
+        row.push(contact.invalidReason ? contact.invalidReason.join('; ') : '');
+      }
+      csvContent += row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",") + "\n";
     });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", "contatos_invalidos.csv");
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      showNotification("Seu navegador não suporta downloads diretos. Tente em outro navegador.", "error");
     }
   }
-
-
 
 async _handleCreateCampaignFinal() {
   try {
