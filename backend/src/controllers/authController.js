@@ -39,6 +39,10 @@ async function logout(req, res, next) {
         httpOnly: true,
         sameSite: 'strict',
       });
+            res.clearCookie('refreshToken', {
+        httpOnly: true,
+        sameSite: 'strict',
+      });
       res.sendStatus(204); // No Content
     } catch (err) {
       next(err);
