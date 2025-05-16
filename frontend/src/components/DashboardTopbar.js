@@ -61,7 +61,9 @@ export default class DashboardTopbar {
     // Mobile menu toggle
     const mobileMenuToggle = this.element.querySelector('#mobile-menu-toggle');
     if (mobileMenuToggle) {
-      mobileMenuToggle.addEventListener('click', () => {
+      mobileMenuToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         this.toggleSidebarMobileCallback();
       });
     }
