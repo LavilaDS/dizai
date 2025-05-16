@@ -5,13 +5,13 @@ async function addParticipants(participants) {
 
   const values = [];
   const placeholders = participants.map((p, i) => {
-    const baseIndex = i * 5;
-    values.push(p.campaign_id, p.email, p.phone, p.token, p.status);
-    return `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5})`;
+    const baseIndex = i * 4;
+    values.push(p.campaign_id, p.email, p.phone, p.token);
+    return `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4})`;
   }).join(', ');
 
   const query = `
-    INSERT INTO participants (campaign_id, email, phone, token, status)
+    INSERT INTO participants (campaign_id, email, phone, token)
     VALUES ${placeholders}
     RETURNING *;
   `;
