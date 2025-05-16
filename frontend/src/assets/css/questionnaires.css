@@ -382,7 +382,7 @@
 .modal-question-text {
   font-weight: 500;
   flex-grow: 1;
-  width:100px;
+  width:100%;
 }
 
 .modal-question-type {
@@ -698,9 +698,13 @@
     width: 95%;
     max-height: 95vh;
   }
+
+  .modal-question-text{
+    width: 100%;
+  }
   
   .modal-question-header {
-    flex-direction: column;
+    flex-direction: row;
     gap: var(--spacing-xs);
   }
   
