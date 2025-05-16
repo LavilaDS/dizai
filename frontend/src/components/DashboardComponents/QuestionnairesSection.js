@@ -90,7 +90,6 @@ export default class QuestionnairesSection {
       await this._fetchQuestionnaires();
     } catch (error) {
       this.error = error.message || "Erro ao carregar questionários";
-      console.error("Erro ao carregar questionários:", error);
     } finally {
       this.loading = false;
       this._renderContent();
@@ -161,7 +160,6 @@ export default class QuestionnairesSection {
       this.questionnaires = data.map(q => ({ ...q, color: q.color || this._getRandomColor() }));
     } catch (error) {
       this.error = error.message || "Erro ao carregar questionários";
-      console.error("Erro ao carregar questionários:", error);
       showNotification("Erro ao carregar questionários.", "error");
     }
   }
@@ -232,7 +230,6 @@ export default class QuestionnairesSection {
     const delay = new Promise(resolve => setTimeout(resolve, 700));
     const fetch = fetchQuestionnaireDetails(questionnaireId)
       .then(async data => {
-        console.log("SOCORRRO", data)
         this.selectedQuestionnaireData = data;
       });
     await Promise.all([delay, fetch]);
@@ -757,7 +754,6 @@ async _handleCreateCampaignFinal() {
 
     return data;
   } catch (error) {
-    console.error("Erro ao criar campanha:", error);
     showNotification(
       `Erro ao criar campanha: ${error.message || "Tente novamente mais tarde."}`,
       "error"

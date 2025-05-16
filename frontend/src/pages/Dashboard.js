@@ -119,7 +119,6 @@ class Dashboard {
     }
 
     if(await checkSession() === false) {
-      console.log("Mudar de tela");
       showNotification("Sessão expirada. Faça login novamente.", "error");
       navigateTo('/login');
       return;

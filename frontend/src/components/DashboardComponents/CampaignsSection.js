@@ -169,7 +169,6 @@ export default class CampaignsSection {
       button.addEventListener('click', (e) => {
         e.stopPropagation();
         const campaignId = e.target.closest('[data-campaign-id]').dataset.campaignId;
-        console.log('View charts for campaign:', campaignId);
         // Implementar visualização de gráficos
       });
     });
@@ -179,7 +178,6 @@ export default class CampaignsSection {
       button.addEventListener('click', (e) => {
         e.stopPropagation();
         const campaignId = e.target.closest('[data-campaign-id]').dataset.campaignId;
-        console.log('More info for campaign:', campaignId);
         // Implementar visualização de informações detalhadas
       });
     });
